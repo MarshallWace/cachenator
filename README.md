@@ -50,20 +50,22 @@ Usage of ./bin/falcon:
 ## Use
 
 ```bash
-curl -X POST http://localhost:8080/upload \
+curl http://localhost:8080/upload \
   -F "files=@/path/blob1" \
-  -F "files=@/path/blob2" \
-  -H "Content-Type: multipart/form-data"
+  -F "files=@/path/blob2"
 
 # First request takes longer as cache gets filled from S3
 curl http://localhost:8080/get?key=blob1 > blob1
 
-# 2nd+ request super fast (99th percentile ~1ms)
+# 2nd+ requests served from memory
 curl http://localhost:8080/get?key=blob1 > blob1
 
 # Hitting any other node will get the hot blob from its owner and cache it as well before returning
 curl http://localhost:8081/get?key=blob1 > blob1
 curl http://localhost:8082/get?key=blob1 > blob1
+
+# Remove blob from memory on all nodes
+curl -X POST http://127.0.0.1:8080/invalidate?key=blob1
 ```
 
 ## Demo
