@@ -108,6 +108,7 @@ func runServer() {
 	router.MaxMultipartMemory = maxBlobSize << 20
 	router.POST("/upload", s3Upload)
 	router.GET("/get", cacheGet)
+	router.POST("/invalidate", cacheInvalidate)
 	router.GET("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
 	router.DELETE("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
 	router.GET("/healthz", func(c *gin.Context) {
@@ -121,7 +122,7 @@ func runServer() {
 
 	go serverGracefulShutdown(server, quit, done)
 
-	log.Info("HTTP server is ready to handle requests at", listenAddr)
+	log.Infof("HTTP server is ready to handle requests at %s", listenAddr)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("HTTP server could not listen on %s: %v\n", listenAddr, err)
 	}

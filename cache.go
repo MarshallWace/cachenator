@@ -53,9 +53,7 @@ func cacheFiller(ctx context.Context, key string, dest groupcache.Sink) error {
 func cacheGet(c *gin.Context) {
 	key := strings.TrimSpace(c.Query("key"))
 	if key == "" {
-		c.JSON(400, gin.H{
-			"error": "'key' not found in querystring parameters",
-		})
+		c.String(400, "'key' not found in querystring parameters")
 		return
 	}
 
@@ -73,5 +71,15 @@ func cacheGet(c *gin.Context) {
 		"Content-Disposition": fmt.Sprintf(`attachment; filename="%s"`, key),
 	}
 	c.DataFromReader(200, int64(len(data)), "application/octet-stream", reader, extraHeaders)
+}
 
+func cacheInvalidate(c *gin.Context) {
+	key := strings.TrimSpace(c.Query("key"))
+	if key == "" {
+		c.String(400, "'key' not found in querystring parameters")
+		return
+	}
+
+	cacheGroup.Remove(context.Background(), key)
+	c.String(200, fmt.Sprintf("'%s' blob removed from memory", key))
 }

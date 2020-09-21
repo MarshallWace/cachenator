@@ -35,15 +35,11 @@ func s3Upload(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
 		log.Errorf("Failed to parse multipart form: %v", err)
-		c.JSON(400, gin.H{
-			"error": "expecting a multipart form",
-		})
+		c.String(400, "Expecting a multipart form")
 		return
 	}
 	if _, found := form.File["files"]; !found {
-		c.JSON(400, gin.H{
-			"error": "'files' not found in multipart form",
-		})
+		c.String(400, "'files' not found in multipart form")
 		return
 	}
 
@@ -79,14 +75,10 @@ func s3Upload(c *gin.Context) {
 	err = uploadPool.Wait()
 	if err != nil {
 		log.Error(err)
-		c.JSON(500, gin.H{
-			"error": "Internal error, check server logs",
-		})
+		c.String(500, "Internal error, check server logs")
 	}
 
-	c.JSON(200, gin.H{
-		"success": fmt.Sprintf("Uploaded %d object(s) to S3", len(files)),
-	})
+	c.String(200, fmt.Sprintf("Uploaded %d object(s) to S3", len(files)))
 }
 
 func s3Download(key string, buf *aws.WriteAtBuffer) error {
