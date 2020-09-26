@@ -1,5 +1,7 @@
 # Falcon
 
+[![Docker](https://github.com/adrianchifor/falcon/workflows/Publish%20Docker/badge.svg)](https://github.com/adrianchifor/falcon/actions?query=workflow%3A%22Publish+Docker%22) [![Go Report Card](https://goreportcard.com/badge/github.com/adrianchifor/falcon)](https://goreportcard.com/report/github.com/adrianchifor/falcon)
+
 Distributed in-memory cache and proxy for S3.
 
 Work in progress.
@@ -46,6 +48,8 @@ Usage of ./bin/falcon:
 ./bin/falcon --bucket S3_BUCKET --peers http://localhost:8080,http://localhost:8081,http://localhost:8082 --port 8081
 ./bin/falcon --bucket S3_BUCKET --peers http://localhost:8080,http://localhost:8081,http://localhost:8082 --port 8082
 ```
+
+Multi-arch docker image is also available: `adrianchifor/falcon:latest`
 
 ## Use
 
