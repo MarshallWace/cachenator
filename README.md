@@ -49,7 +49,7 @@ Usage of ./bin/falcon:
 ./bin/falcon --bucket S3_BUCKET --peers http://localhost:8080,http://localhost:8081,http://localhost:8082 --port 8082
 ```
 
-Multi-arch docker image is also available: `adrianchifor/falcon:latest`
+Multi-arch docker image is also available: `ghcr.io/adrianchifor/falcon:latest`
 
 ## Use
 
@@ -71,9 +71,3 @@ curl http://localhost:8082/get?key=blob1 > blob1
 # Remove blob from memory on all nodes
 curl -X POST http://127.0.0.1:8080/invalidate?key=blob1
 ```
-
-## Demo
-
-3-node cluster with blob upload, get on each node and invalidate.
-
-https://vimeo.com/460351812
