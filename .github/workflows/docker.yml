@@ -1,31 +1,56 @@
 name: Publish Docker
-
-on:
-  push:
-    branches: master
-
+on: push
 jobs:
-  multi:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
 
-      - name: Set up Docker Buildx
+      - name: Set up Docker buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Login to DockerHub
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Login to ghcr.io
         uses: docker/login-action@v1
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.CR_PAT }}
 
-      - name: Build and Push
+      - name: Build and Push latest
         uses: docker/build-push-action@v2
         with:
+          context: .
+          file: ./Dockerfile
           platforms: linux/amd64,linux/arm/v7,linux/arm64
-          push: true
-          tags: adrianchifor/falcon:latest
+          tags: ghcr.io/adrianchifor/falcon:latest
+          push: ${{ github.event_name != 'pull_request' }}
+          cache-to: type=local,dest=/tmp/.buildx-cache
+
+      - name: Prepare tag
+        id: prep
+        if: "startsWith(github.ref, 'refs/tags/v')"
+        run: |
+          echo ::set-output name=tags::ghcr.io/adrianchifor/falcon:${GITHUB_REF#refs/tags/v}
+
+      - name: Build and Push tag
+        uses: docker/build-push-action@v2
+        if: "startsWith(github.ref, 'refs/tags/v')"
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm/v7,linux/arm64
+          tags: ${{ steps.prep.outputs.tags }}
+          push: ${{ github.event_name != 'pull_request' }}
+          cache-from: type=local,src=/tmp/.buildx-cache
