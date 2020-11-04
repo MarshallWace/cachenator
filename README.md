@@ -2,11 +2,20 @@
 
 [![Docker](https://github.com/adrianchifor/falcon/workflows/Publish%20Docker/badge.svg)](https://github.com/adrianchifor/falcon/actions?query=workflow%3A%22Publish+Docker%22) [![Go Report Card](https://goreportcard.com/badge/github.com/adrianchifor/falcon)](https://goreportcard.com/report/github.com/adrianchifor/falcon)
 
-Distributed in-memory cache and proxy for S3.
+Distributed, sharded in-memory cache and proxy for S3.
 
-Work in progress.
+Features:
 
-<img src="./docs/illustration.jpg" width="208" height="300">
+- Horizontal scaling and clustering
+- Read-through blob cache with TTL
+- Batch parallel uploads
+- Max memory limits with LRU evictions
+- Fast cache keys invalidation
+- Keys prefix pre-warming (soon)
+- Batch parallel deletes (soon)
+- Access multiple S3 endpoints (on-prem + AWS) (soon)
+
+<img src="./docs/diagram.png">
 
 ---
 
