@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/adrianchifor/go-parallel"
 	"github.com/aws/aws-sdk-go/aws"
@@ -13,7 +14,6 @@ import (
 )
 
 var (
-	bucket       string
 	s3Endpoint   string
 	s3Uploader   s3manager.Uploader
 	s3Downloader s3manager.Downloader
@@ -42,6 +42,16 @@ func s3Upload(c *gin.Context) {
 		c.String(400, "'files' not found in multipart form")
 		return
 	}
+	bucket := strings.TrimSpace(c.Query("bucket"))
+	if bucket == "" {
+		c.String(400, "'bucket' not found in querystring parameters")
+		return
+	}
+	path := strings.TrimSpace(c.Query("path"))
+	// Add trailing / if doesn't exist and path is set
+	if path != "" && !strings.HasSuffix(path, "/") {
+		path = fmt.Sprintf("%s/", path)
+	}
 
 	files := form.File["files"]
 
@@ -62,7 +72,7 @@ func s3Upload(c *gin.Context) {
 
 			_, err = s3Uploader.Upload(&s3manager.UploadInput{
 				Bucket: aws.String(bucket),
-				Key:    aws.String(key),
+				Key:    aws.String(fmt.Sprintf("%s%s", path, key)),
 				Body:   body,
 			})
 			if err != nil {
@@ -81,7 +91,7 @@ func s3Upload(c *gin.Context) {
 	c.String(200, fmt.Sprintf("Uploaded %d object(s) to S3", len(files)))
 }
 
-func s3Download(key string, buf *aws.WriteAtBuffer) error {
+func s3Download(bucket string, key string, buf *aws.WriteAtBuffer) error {
 	_, err := s3Downloader.Download(buf, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),

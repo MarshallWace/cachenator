@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -9,13 +8,12 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.1.0"
+const version string = "0.2.0"
 
 var (
 	host        string
@@ -29,7 +27,6 @@ var (
 func init() {
 	flag.StringVar(&host, "host", "localhost", "Host/IP to identify self in peers list")
 	flag.IntVar(&port, "port", 8080, "Server port")
-	flag.StringVar(&bucket, "bucket", "", "S3 bucket name (required)")
 	flag.StringVar(&s3Endpoint, "s3-endpoint", "", "Custom S3 endpoint URL (defaults to AWS)")
 	flag.Int64Var(&maxBlobSize, "max-blob-size", 128, "Max blob size in megabytes")
 	flag.IntVar(&ttl, "ttl", 60, "Blob time-to-live in cache in minutes")
@@ -55,13 +52,8 @@ func checkFlags() {
 	}
 
 	if versionFlag {
-		log.Info("Falcon version", version)
+		log.Infof("Falcon version %s", version)
 		os.Exit(0)
-	}
-
-	if bucket == "" {
-		flag.PrintDefaults()
-		log.Fatal("--bucket not defined, exiting")
 	}
 
 	peers = []string{}
@@ -69,21 +61,6 @@ func checkFlags() {
 		peers = strings.Split(peersFlag, ",")
 		peers = cleanupPeers(peers)
 	}
-}
-
-func cleanupPeers(peers []string) []string {
-	cleanedPeers := []string{}
-	for _, peer := range peers {
-		cleanPeer := strings.TrimSpace(peer)
-		if !strings.Contains(cleanPeer, "http://") {
-			cleanPeer = fmt.Sprintf("http://%s", cleanPeer)
-		}
-		if strings.Count(cleanPeer, ":") < 2 {
-			cleanPeer = fmt.Sprintf("%s:%d", cleanPeer, port)
-		}
-		cleanedPeers = append(cleanedPeers, cleanPeer)
-	}
-	return cleanedPeers
 }
 
 func runServer() {
@@ -121,18 +98,4 @@ func runServer() {
 
 	<-done
 	log.Info("HTTP server stopped")
-}
-
-func serverGracefulShutdown(server *http.Server, quit <-chan os.Signal, done chan<- bool) {
-	<-quit
-	log.Info("HTTP server is shutting down...")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	server.SetKeepAlivesEnabled(false)
-	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("Could not gracefully shutdown the HTTP server: %v\n", err)
-	}
-	close(done)
 }

@@ -32,12 +32,15 @@ func initCachePool() {
 	cacheGroup = groupcache.NewGroup("s3", maxBlobSize<<20, groupcache.GetterFunc(cacheFiller))
 }
 
-func cacheFiller(ctx context.Context, key string, dest groupcache.Sink) error {
-	log.Debugf("Pulling '%s' blob into cache from S3", key)
+func cacheFiller(ctx context.Context, cacheKey string, dest groupcache.Sink) error {
+	log.Debugf("Pulling '%s' blob into cache from S3", cacheKey)
+	keySplit := strings.Split(cacheKey, "#")
+	bucket := keySplit[0]
+	key := keySplit[1]
 	buf := aws.NewWriteAtBuffer([]byte{})
-	err := s3Download(key, buf)
+	err := s3Download(bucket, key, buf)
 	if err != nil {
-		log.Errorf("Failed to download blob '%s' from S3: %v", key, err)
+		log.Errorf("Failed to download blob '%s' from S3: %v", cacheKey, err)
 		return err
 	}
 
@@ -51,6 +54,11 @@ func cacheFiller(ctx context.Context, key string, dest groupcache.Sink) error {
 }
 
 func cacheGet(c *gin.Context) {
+	bucket := strings.TrimSpace(c.Query("bucket"))
+	if bucket == "" {
+		c.String(400, "'bucket' not found in querystring parameters")
+		return
+	}
 	key := strings.TrimSpace(c.Query("key"))
 	if key == "" {
 		c.String(400, "'key' not found in querystring parameters")
@@ -61,7 +69,7 @@ func cacheGet(c *gin.Context) {
 	defer cancel()
 
 	var data []byte
-	if err := cacheGroup.Get(ctx, key, groupcache.AllocatingByteSliceSink(&data)); err != nil {
+	if err := cacheGroup.Get(ctx, constructCacheKey(bucket, key), groupcache.AllocatingByteSliceSink(&data)); err != nil {
 		c.String(404, "Blob not found")
 		return
 	}
@@ -74,12 +82,17 @@ func cacheGet(c *gin.Context) {
 }
 
 func cacheInvalidate(c *gin.Context) {
+	bucket := strings.TrimSpace(c.Query("bucket"))
+	if bucket == "" {
+		c.String(400, "'bucket' not found in querystring parameters")
+		return
+	}
 	key := strings.TrimSpace(c.Query("key"))
 	if key == "" {
 		c.String(400, "'key' not found in querystring parameters")
 		return
 	}
-
-	cacheGroup.Remove(context.Background(), key)
-	c.String(200, fmt.Sprintf("'%s' blob removed from memory", key))
+	cacheKey := constructCacheKey(bucket, key)
+	cacheGroup.Remove(context.Background(), cacheKey)
+	c.String(200, fmt.Sprintf("'%s' blob removed from memory", cacheKey))
 }

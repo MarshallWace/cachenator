@@ -10,64 +10,65 @@ Work in progress.
 
 ---
 
-## Build
-
-```
-make
-```
-
 ## Run
 
 ```
-./bin/falcon --help
-Usage of ./bin/falcon:
-  -bucket string
-        S3 bucket name (required)
+$ docker run -it ghcr.io/adrianchifor/falcon --help
+Usage of /falcon:
   -host string
-        Host/IP to identify self in peers list (default "localhost")
-  -k8s-discovery-id string
-        Auto-discover peers on Kubernetes with label falcon-discovery-id=<k8s-discovery-id>
+    	Host/IP to identify self in peers list (default "localhost")
   -max-blob-size int
-        Max blob size in megabytes (default 128)
+    	Max blob size in megabytes (default 128)
   -peers string
-        Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')
+    	Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')
   -port int
-        Server port (default 8080)
+    	Server port (default 8080)
   -s3-endpoint string
-        Custom S3 endpoint URL (defaults to AWS)
+    	Custom S3 endpoint URL (defaults to AWS)
   -timeout int
-        Get blob timeout in milliseconds (default 5000)
+    	Get blob timeout in milliseconds (default 5000)
   -ttl int
-        Blob time-to-live in cache in minutes (default 60)
+    	Blob time-to-live in cache in minutes (default 60)
   -verbose
-        Verbose logs
+    	Verbose logs
   -version
-        Version
+    	Version
 
-./bin/falcon --bucket S3_BUCKET --peers http://localhost:8080,http://localhost:8081,http://localhost:8082 --port 8080
-./bin/falcon --bucket S3_BUCKET --peers http://localhost:8080,http://localhost:8081,http://localhost:8082 --port 8081
-./bin/falcon --bucket S3_BUCKET --peers http://localhost:8080,http://localhost:8081,http://localhost:8082 --port 8082
+$ docker run -d --name falcon1 --network host ghcr.io/adrianchifor/falcon \
+  --port 8080 \
+  --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
+
+$ docker run -d --name falcon2 --network host ghcr.io/adrianchifor/falcon \
+  --port 8081 \
+  --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
+
+$ docker run -d --name falcon3 --network host ghcr.io/adrianchifor/falcon \
+  --port 8082 \
+  --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 ```
-
-Multi-arch docker image is also available: `ghcr.io/adrianchifor/falcon:latest`
 
 ## Use
 
 ```bash
-curl http://localhost:8080/upload \
+# Put files into bucket1:blob1 and bucket1:blob2
+curl "http://localhost:8080/upload?bucket=bucket1" \
   -F "files=@/path/blob1" \
   -F "files=@/path/blob2"
 
+# Put file into bucket1:folder/blob3
+curl "http://localhost:8080/upload?bucket=bucket1&path=folder" \
+  -F "files=@/path/blob3"
+
 # First request takes longer as cache gets filled from S3
-curl http://localhost:8080/get?key=blob1 > blob1
+curl "http://localhost:8080/get?bucket=bucket1&key=blob1" > blob1
 
 # 2nd+ requests served from memory
-curl http://localhost:8080/get?key=blob1 > blob1
+curl "http://localhost:8080/get?bucket=bucket1&key=blob1" > blob1
 
 # Hitting any other node will get the hot blob from its owner and cache it as well before returning
-curl http://localhost:8081/get?key=blob1 > blob1
-curl http://localhost:8082/get?key=blob1 > blob1
+curl "http://localhost:8081/get?bucket=bucket1&key=blob1" > blob1
+curl "http://localhost:8082/get?bucket=bucket1&key=blob1" > blob1
 
 # Remove blob from memory on all nodes
-curl -X POST http://127.0.0.1:8080/invalidate?key=blob1
+curl -X POST "http://127.0.0.1:8080/invalidate?bucket=bucket1&key=blob1"
 ```
