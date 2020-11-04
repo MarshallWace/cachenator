@@ -1,4 +1,4 @@
-module github.com/adrianchifor/falcon
+module github.com/adrianchifor/cachenator
 
 go 1.15
 

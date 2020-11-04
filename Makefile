@@ -9,7 +9,7 @@ download:
 	go mod download
 
 build:
-	go build -o bin/falcon
+	go build -o bin/cachenator
 
 clean:
 	rm -rf bin/

@@ -56,7 +56,7 @@ func checkFlags() {
 	}
 
 	if versionFlag {
-		log.Infof("Falcon version %s", version)
+		log.Infof("Cachenator version %s", version)
 		os.Exit(0)
 	}
 

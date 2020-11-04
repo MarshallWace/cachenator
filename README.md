@@ -1,6 +1,6 @@
-# Falcon
+# Cachenator
 
-[![Docker](https://github.com/adrianchifor/falcon/workflows/Publish%20Docker/badge.svg)](https://github.com/adrianchifor/falcon/actions?query=workflow%3A%22Publish+Docker%22) [![Go Report Card](https://goreportcard.com/badge/github.com/adrianchifor/falcon)](https://goreportcard.com/report/github.com/adrianchifor/falcon)
+[![Docker](https://github.com/adrianchifor/cachenator/workflows/Publish%20Docker/badge.svg)](https://github.com/adrianchifor/cachenator/actions?query=workflow%3A%22Publish+Docker%22) [![Go Report Card](https://goreportcard.com/badge/github.com/adrianchifor/cachenator)](https://goreportcard.com/report/github.com/adrianchifor/cachenator)
 
 Distributed, sharded in-memory cache and proxy for S3.
 
@@ -22,8 +22,8 @@ Features:
 ## Run
 
 ```
-$ docker run -it ghcr.io/adrianchifor/falcon --help
-Usage of /falcon:
+$ docker run -it ghcr.io/adrianchifor/cachenator --help
+Usage of /cachenator:
   -host string
     	Host/IP to identify self in peers list (default "localhost")
   -max-cache-size int
@@ -45,15 +45,15 @@ Usage of /falcon:
   -version
     	Version
 
-$ docker run -d --name falcon1 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/falcon \
+$ docker run -d --name cache1 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/cachenator \
   --port 8080 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 
-$ docker run -d --name falcon2 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/falcon \
+$ docker run -d --name cache2 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/cachenator \
   --port 8081 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 
-$ docker run -d --name falcon3 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/falcon \
+$ docker run -d --name cache3 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/cachenator \
   --port 8082 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 ```
