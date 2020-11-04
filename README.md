@@ -17,8 +17,10 @@ $ docker run -it ghcr.io/adrianchifor/falcon --help
 Usage of /falcon:
   -host string
     	Host/IP to identify self in peers list (default "localhost")
-  -max-blob-size int
-    	Max blob size in megabytes (default 128)
+  -max-cache-size int
+    	Max cache size in megabytes. If size goes above, oldest keys will be evicted (default 512)
+  -max-multipart-memory int
+    	Max memory in megabytes for /upload multipart form parsing (default 128)
   -peers string
     	Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')
   -port int

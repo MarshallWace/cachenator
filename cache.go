@@ -14,11 +14,12 @@ import (
 )
 
 var (
-	peers      []string
-	cacheGroup *groupcache.Group
-	cachePool  *groupcache.HTTPPool
-	ttl        int
-	timeout    int
+	peers        []string
+	cacheGroup   *groupcache.Group
+	cachePool    *groupcache.HTTPPool
+	maxCacheSize int64
+	ttl          int
+	timeout      int
 )
 
 func initCachePool() {
@@ -29,7 +30,7 @@ func initCachePool() {
 		cachePool.Set(peers...)
 	}
 
-	cacheGroup = groupcache.NewGroup("s3", maxBlobSize<<20, groupcache.GetterFunc(cacheFiller))
+	cacheGroup = groupcache.NewGroup("s3", maxCacheSize<<20, groupcache.GetterFunc(cacheFiller))
 }
 
 func cacheFiller(ctx context.Context, cacheKey string, dest groupcache.Sink) error {

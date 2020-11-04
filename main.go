@@ -13,25 +13,29 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.2.0"
+const version string = "0.3.0"
 
 var (
-	host        string
-	port        int
-	maxBlobSize int64
-	peersFlag   string
-	verbose     bool
-	versionFlag bool
+	host               string
+	port               int
+	maxMultipartMemory int64
+	peersFlag          string
+	verbose            bool
+	versionFlag        bool
 )
 
 func init() {
 	flag.StringVar(&host, "host", "localhost", "Host/IP to identify self in peers list")
 	flag.IntVar(&port, "port", 8080, "Server port")
 	flag.StringVar(&s3Endpoint, "s3-endpoint", "", "Custom S3 endpoint URL (defaults to AWS)")
-	flag.Int64Var(&maxBlobSize, "max-blob-size", 128, "Max blob size in megabytes")
+	flag.Int64Var(&maxMultipartMemory, "max-multipart-memory", 128,
+		"Max memory in megabytes for /upload multipart form parsing")
+	flag.Int64Var(&maxCacheSize, "max-cache-size", 512,
+		"Max cache size in megabytes. If size goes above, oldest keys will be evicted")
 	flag.IntVar(&ttl, "ttl", 60, "Blob time-to-live in cache in minutes")
 	flag.IntVar(&timeout, "timeout", 5000, "Get blob timeout in milliseconds")
-	flag.StringVar(&peersFlag, "peers", "", "Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')")
+	flag.StringVar(&peersFlag, "peers", "",
+		"Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')")
 	flag.BoolVar(&verbose, "verbose", false, "Verbose logs")
 	flag.BoolVar(&versionFlag, "version", false, "Version")
 	flag.Parse()
@@ -74,7 +78,7 @@ func runServer() {
 	}
 
 	router := gin.Default()
-	router.MaxMultipartMemory = maxBlobSize << 20
+	router.MaxMultipartMemory = maxMultipartMemory << 20
 	router.POST("/upload", s3Upload)
 	router.GET("/get", cacheGet)
 	router.POST("/invalidate", cacheInvalidate)
