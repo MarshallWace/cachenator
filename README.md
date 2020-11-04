@@ -36,15 +36,15 @@ Usage of /falcon:
   -version
     	Version
 
-$ docker run -d --name falcon1 --network host ghcr.io/adrianchifor/falcon \
+$ docker run -d --name falcon1 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/falcon \
   --port 8080 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 
-$ docker run -d --name falcon2 --network host ghcr.io/adrianchifor/falcon \
+$ docker run -d --name falcon2 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/falcon \
   --port 8081 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 
-$ docker run -d --name falcon3 --network host ghcr.io/adrianchifor/falcon \
+$ docker run -d --name falcon3 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/falcon \
   --port 8082 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 ```
