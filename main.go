@@ -35,8 +35,6 @@ func init() {
 	flag.IntVar(&ttl, "ttl", 60, "Blob time-to-live in cache in minutes")
 	flag.IntVar(&timeout, "timeout", 5000, "Get blob timeout in milliseconds")
 	flag.StringVar(&peersFlag, "peers", "", "Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')")
-	flag.StringVar(&k8sDiscoveryId, "k8s-discovery-id", "",
-		"Auto-discover peers on Kubernetes with label falcon-discovery-id=<k8s-discovery-id>")
 	flag.BoolVar(&verbose, "verbose", false, "Verbose logs")
 	flag.BoolVar(&versionFlag, "version", false, "Version")
 	flag.Parse()
@@ -70,12 +68,6 @@ func checkFlags() {
 	if peersFlag != "" {
 		peers = strings.Split(peersFlag, ",")
 		peers = cleanupPeers(peers)
-
-		if k8sDiscoveryId != "" {
-			log.Info(
-				"--k8s-discovery-id will be ignored as --peers is defined. Unset --peers to enable Kubernetes discovery")
-			k8sDiscoveryId = ""
-		}
 	}
 }
 
