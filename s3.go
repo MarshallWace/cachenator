@@ -14,9 +14,13 @@ import (
 )
 
 var (
-	s3Endpoint   string
-	s3Uploader   s3manager.Uploader
-	s3Downloader s3manager.Downloader
+	s3Endpoint          string
+	uploadPartSize      int64
+	uploadConcurrency   int
+	s3Uploader          s3manager.Uploader
+	downloadPartSize    int64
+	downloadConcurrency int
+	s3Downloader        s3manager.Downloader
 )
 
 func initS3() {
@@ -27,8 +31,15 @@ func initS3() {
 		log.Fatalf("Failed to initialize S3 session: %v", err)
 	}
 
-	s3Uploader = *s3manager.NewUploader(s3Session)
-	s3Downloader = *s3manager.NewDownloader(s3Session)
+	s3Uploader = *s3manager.NewUploader(s3Session, func(u *s3manager.Uploader) {
+		u.PartSize = uploadPartSize * 1024 * 1024
+		u.Concurrency = uploadConcurrency
+	})
+	s3Downloader = *s3manager.NewDownloader(s3Session, func(d *s3manager.Downloader) {
+		d.PartSize = downloadPartSize * 1024 * 1024
+		d.Concurrency = downloadConcurrency
+		d.BufferProvider = s3manager.NewPooledBufferedWriterReadFromProvider(5 * 1024 * 1024)
+	})
 }
 
 func s3Upload(c *gin.Context) {

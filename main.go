@@ -28,6 +28,14 @@ func init() {
 	flag.StringVar(&host, "host", "localhost", "Host/IP to identify self in peers list")
 	flag.IntVar(&port, "port", 8080, "Server port")
 	flag.StringVar(&s3Endpoint, "s3-endpoint", "", "Custom S3 endpoint URL (defaults to AWS)")
+	flag.Int64Var(&uploadPartSize, "s3-upload-part-size", 5,
+		"Buffer size in megabytes when uploading blob chunks to S3 (minimum 5)")
+	flag.IntVar(&uploadConcurrency, "s3-upload-concurrency", 10,
+		"Number of goroutines to spin up when uploading blob chunks to S3")
+	flag.Int64Var(&downloadPartSize, "s3-download-part-size", 5,
+		"Size in megabytes to request from S3 for each blob chunk (minimum 5)")
+	flag.IntVar(&downloadConcurrency, "s3-download-concurrency", 10,
+		"Number of goroutines to spin up when downloading blob chunks from S3")
 	flag.Int64Var(&maxMultipartMemory, "max-multipart-memory", 128,
 		"Max memory in megabytes for /upload multipart form parsing")
 	flag.Int64Var(&maxCacheSize, "max-cache-size", 512,
