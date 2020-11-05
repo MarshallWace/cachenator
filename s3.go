@@ -62,6 +62,7 @@ func s3Upload(c *gin.Context) {
 		file := file
 		uploadPool.AddJob(func() {
 			key := file.Filename
+			log.Debugf("Uploading '%s#%s%s' to S3", bucket, path, key)
 			body, err := file.Open()
 			if err != nil {
 				// TODO: Propagate error higher
@@ -78,7 +79,9 @@ func s3Upload(c *gin.Context) {
 			if err != nil {
 				// TODO: Propagate error higher
 				log.Errorf("Failed to upload '%s' to S3: %v", key, err)
+				return
 			}
+			log.Debugf("Upload to S3 done for '%s#%s%s'", bucket, path, key)
 		})
 	}
 

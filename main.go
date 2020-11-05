@@ -75,6 +75,11 @@ func runServer() {
 	listenAddr := fmt.Sprintf("127.0.0.1:%d", port)
 	if os.Getenv("GIN_MODE") == "release" {
 		listenAddr = fmt.Sprintf("0.0.0.0:%d", port)
+		log.SetFormatter(&log.JSONFormatter{})
+	} else {
+		log.SetFormatter(&log.TextFormatter{
+			FullTimestamp: true,
+		})
 	}
 
 	router := gin.Default()
@@ -92,6 +97,8 @@ func runServer() {
 		Addr:    listenAddr,
 		Handler: router,
 	}
+
+	log.Infof("Running: %s", strings.Join(os.Args, " "))
 
 	go serverGracefulShutdown(server, quit, done)
 

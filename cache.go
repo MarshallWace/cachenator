@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"strings"
@@ -34,22 +33,26 @@ func initCachePool() {
 }
 
 func cacheFiller(ctx context.Context, cacheKey string, dest groupcache.Sink) error {
-	log.Debugf("Pulling '%s' blob into cache from S3", cacheKey)
+	log.Debugf("Pulling '%s' into cache from S3", cacheKey)
 	keySplit := strings.Split(cacheKey, "#")
 	bucket := keySplit[0]
 	key := keySplit[1]
 	buf := aws.NewWriteAtBuffer([]byte{})
 	err := s3Download(bucket, key, buf)
 	if err != nil {
-		log.Errorf("Failed to download blob '%s' from S3: %v", cacheKey, err)
+		log.Errorf("Failed to download '%s' from S3: %v", cacheKey, err)
 		return err
 	}
 
+	log.Debugf("Pulled '%s' into buffer, adding to cache with TTL %dm", cacheKey, ttl)
+
 	err = dest.SetBytes(buf.Bytes(), time.Now().Add(time.Minute*time.Duration(ttl)))
 	if err != nil {
-		log.Errorf("Failed to fill cache sink with blob '%s': %v", key, err)
+		log.Errorf("Failed to fill cache sink with '%s': %v", key, err)
 		return err
 	}
+
+	log.Debugf("Pulled '%s' into cache", cacheKey)
 
 	return nil
 }
@@ -65,21 +68,23 @@ func cacheGet(c *gin.Context) {
 		c.String(400, "'key' not found in querystring parameters")
 		return
 	}
+	cacheKey := constructCacheKey(bucket, key)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeout))
 	defer cancel()
 
+	log.Debugf("Checking cache for '%s'", cacheKey)
+
 	var data []byte
-	if err := cacheGroup.Get(ctx, constructCacheKey(bucket, key), groupcache.AllocatingByteSliceSink(&data)); err != nil {
+	if err := cacheGroup.Get(ctx, cacheKey, groupcache.AllocatingByteSliceSink(&data)); err != nil {
 		c.String(404, "Blob not found")
 		return
 	}
 
-	reader := bytes.NewReader(data)
-	extraHeaders := map[string]string{
-		"Content-Disposition": fmt.Sprintf(`attachment; filename="%s"`, key),
-	}
-	c.DataFromReader(200, int64(len(data)), "application/octet-stream", reader, extraHeaders)
+	log.Debugf("Sending '%s' bytes in response", cacheKey)
+
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, key))
+	c.Data(200, "application/octet-stream", data)
 }
 
 func cacheInvalidate(c *gin.Context) {
@@ -95,5 +100,7 @@ func cacheInvalidate(c *gin.Context) {
 	}
 	cacheKey := constructCacheKey(bucket, key)
 	cacheGroup.Remove(context.Background(), cacheKey)
-	c.String(200, fmt.Sprintf("'%s' blob removed from memory", cacheKey))
+	msg := fmt.Sprintf("'%s' invalidated from cache", cacheKey)
+	log.Debugf(msg)
+	c.String(200, msg)
 }
