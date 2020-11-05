@@ -34,8 +34,16 @@ Usage of /cachenator:
     	Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')
   -port int
     	Server port (default 8080)
+  -s3-download-concurrency int
+    	Number of goroutines to spin up when downloading blob chunks from S3 (default 10)
+  -s3-download-part-size int
+    	Size in megabytes to request from S3 for each blob chunk (minimum 5) (default 5)
   -s3-endpoint string
     	Custom S3 endpoint URL (defaults to AWS)
+  -s3-upload-concurrency int
+    	Number of goroutines to spin up when uploading blob chunks to S3 (default 10)
+  -s3-upload-part-size int
+    	Buffer size in megabytes when uploading blob chunks to S3 (minimum 5) (default 5)
   -timeout int
     	Get blob timeout in milliseconds (default 5000)
   -ttl int
