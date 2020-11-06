@@ -8,11 +8,10 @@ Features:
 
 - Horizontal scaling and clustering
 - Read-through blob cache with TTL
-- Batch parallel uploads
+- Batch parallel uploads and deletes
 - Max memory limits with LRU evictions
 - Fast cache keys invalidation
 - Keys prefix pre-warming (soon)
-- Batch parallel deletes (soon)
 - Access multiple S3 endpoints (on-prem + AWS) (soon)
 
 <img src="./docs/diagram.png">
@@ -90,4 +89,10 @@ curl "http://localhost:8082/get?bucket=bucket1&key=blob1" > blob1
 
 # Remove blob from memory on all nodes
 curl -X POST "http://127.0.0.1:8080/invalidate?bucket=bucket1&key=blob1"
+
+# Remove blob1 from s3
+curl -XDELETE "http://127.0.0.1:8080/delete?bucket=bucket1&key=blob1"
+
+# Remove all blobs with prefix from s3
+curl -XDELETE "http://127.0.0.1:8080/delete?bucket=bucket1&prefix=blob"
 ```

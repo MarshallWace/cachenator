@@ -13,7 +13,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.5.0"
+const version string = "0.6.0"
 
 var (
 	host               string
@@ -94,6 +94,7 @@ func runServer() {
 	router.MaxMultipartMemory = maxMultipartMemory << 20
 	router.POST("/upload", s3Upload)
 	router.GET("/get", cacheGet)
+	router.DELETE("/delete", s3Delete)
 	router.POST("/invalidate", cacheInvalidate)
 	router.GET("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
 	router.DELETE("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))

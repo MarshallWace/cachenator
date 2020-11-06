@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ import (
 
 var (
 	s3Endpoint          string
+	s3Client            s3iface.S3API
 	uploadPartSize      int64
 	uploadConcurrency   int
 	s3Uploader          s3manager.Uploader
@@ -30,6 +32,7 @@ func initS3() {
 	if err != nil {
 		log.Fatalf("Failed to initialize S3 session: %v", err)
 	}
+	s3Client = s3iface.S3API(s3.New(s3Session))
 
 	s3Uploader = *s3manager.NewUploader(s3Session, func(u *s3manager.Uploader) {
 		u.PartSize = uploadPartSize * 1024 * 1024
@@ -100,9 +103,10 @@ func s3Upload(c *gin.Context) {
 	if err != nil {
 		log.Error(err)
 		c.String(500, "Internal error, check server logs")
+		return
 	}
 
-	c.String(200, fmt.Sprintf("Uploaded %d object(s) to S3", len(files)))
+	c.String(200, fmt.Sprintf("Uploaded %d object(s) to S3 bucket '%s'", len(files), bucket))
 }
 
 func s3Download(bucket string, key string, buf *aws.WriteAtBuffer) error {
@@ -111,4 +115,54 @@ func s3Download(bucket string, key string, buf *aws.WriteAtBuffer) error {
 		Key:    aws.String(key),
 	})
 	return err
+}
+
+func s3Delete(c *gin.Context) {
+	bucket := strings.TrimSpace(c.Query("bucket"))
+	if bucket == "" {
+		c.String(400, "'bucket' not found in querystring parameters")
+		return
+	}
+	key := strings.TrimSpace(c.Query("key"))
+	prefix := strings.TrimSpace(c.Query("prefix"))
+	if key == "" && prefix == "" {
+		c.String(400, "'key' or 'prefix' not found in querystring parameters")
+		return
+	}
+	if key != "" && prefix != "" {
+		c.String(400, "Only provide one of 'key' or 'prefix' in querystring parameters")
+		return
+	}
+
+	if key != "" {
+		_, err := s3Client.DeleteObject(&s3.DeleteObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(key),
+		})
+		if err != nil {
+			msg := fmt.Sprintf("Failed to delete '%s#%s' from S3: %v", bucket, key, err)
+			log.Errorf(msg)
+			c.String(500, msg)
+			return
+		}
+
+		s3Client.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(key),
+		})
+		c.String(200, fmt.Sprintf("Deleted '%s#%s' from S3", bucket, key))
+	} else {
+		iter := s3manager.NewDeleteListIterator(s3Client, &s3.ListObjectsInput{
+			Bucket: aws.String(bucket),
+			Prefix: aws.String(prefix),
+		})
+		if err := s3manager.NewBatchDeleteWithClient(s3Client).Delete(aws.BackgroundContext(), iter); err != nil {
+			msg := fmt.Sprintf("Failed to batch delete '%s#%s' from S3: %v", bucket, prefix, err)
+			log.Errorf(msg)
+			c.String(500, msg)
+			return
+		}
+
+		c.String(200, fmt.Sprintf("Deleted object(s) with prefix '%s' from S3 bucket '%s'", prefix, bucket))
+	}
 }
