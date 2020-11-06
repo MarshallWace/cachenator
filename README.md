@@ -88,7 +88,7 @@ curl "http://localhost:8081/get?bucket=bucket1&key=blob1" > blob1
 curl "http://localhost:8082/get?bucket=bucket1&key=blob1" > blob1
 
 # Remove blob from memory on all nodes
-curl -X POST "http://127.0.0.1:8080/invalidate?bucket=bucket1&key=blob1"
+curl -XPOST "http://127.0.0.1:8080/invalidate?bucket=bucket1&key=blob1"
 
 # Remove blob1 from s3
 curl -XDELETE "http://127.0.0.1:8080/delete?bucket=bucket1&key=blob1"
