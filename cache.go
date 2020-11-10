@@ -77,7 +77,7 @@ func cacheGet(c *gin.Context) {
 
 	var cacheView groupcache.ByteView
 	if err := cacheGroup.Get(ctx, cacheKey, groupcache.ByteViewSink(&cacheView)); err != nil {
-		c.String(404, "Blob not found")
+		c.String(404, fmt.Sprintf("Blob '%s' not found", cacheKey))
 		return
 	}
 
@@ -86,6 +86,51 @@ func cacheGet(c *gin.Context) {
 	}
 	log.Debugf("Sending '%s' bytes in response", cacheKey)
 	c.DataFromReader(200, int64(cacheView.Len()), "application/octet-stream", cacheView.Reader(), extraHeaders)
+}
+
+func cachePrewarm(c *gin.Context) {
+	bucket := strings.TrimSpace(c.Query("bucket"))
+	if bucket == "" {
+		c.String(400, "'bucket' not found in querystring parameters")
+		return
+	}
+	prefix := strings.TrimSpace(c.Query("prefix"))
+	if prefix == "" {
+		c.String(400, "'prefix' not found in querystring parameters")
+		return
+	}
+
+	log.Debugf("Pre-warming cache with prefix '%s#%s'", bucket, prefix)
+	keys, err := s3List(bucket, prefix)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to list keys with prefix '%s' in S3 bucket '%s': %v", prefix, bucket, err)
+		log.Errorf(msg)
+		c.String(500, msg)
+		return
+	}
+	if len(keys) == 0 {
+		c.String(404, fmt.Sprintf("No keys found with prefix '%s' in S3 bucket '%s'", prefix, bucket))
+		return
+	}
+
+	for _, key := range keys {
+		key := key
+		go func() {
+			cacheKey := constructCacheKey(bucket, key)
+
+			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeout))
+			defer cancel()
+
+			log.Debugf("Pre-warming cache with key '%s'", key)
+
+			var tmpCacheView groupcache.ByteView
+			if err := cacheGroup.Get(ctx, cacheKey, groupcache.ByteViewSink(&tmpCacheView)); err != nil {
+				log.Errorf("Failed to pre-warm cache with key '%s': %v", cacheKey, err)
+			}
+		}()
+	}
+
+	c.String(200, fmt.Sprintf("Pre-warming cache in the background with prefix '%s' from S3 bucket '%s'", prefix, bucket))
 }
 
 func cacheInvalidate(c *gin.Context) {

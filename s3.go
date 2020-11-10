@@ -109,14 +109,6 @@ func s3Upload(c *gin.Context) {
 	c.String(200, fmt.Sprintf("Uploaded %d object(s) to S3 bucket '%s'", len(files), bucket))
 }
 
-func s3Download(bucket string, key string, buf *aws.WriteAtBuffer) error {
-	_, err := s3Downloader.Download(buf, &s3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	})
-	return err
-}
-
 func s3Delete(c *gin.Context) {
 	bucket := strings.TrimSpace(c.Query("bucket"))
 	if bucket == "" {
@@ -135,6 +127,7 @@ func s3Delete(c *gin.Context) {
 	}
 
 	if key != "" {
+		log.Debugf("Deleting key '%s#%s' from S3", bucket, key)
 		_, err := s3Client.DeleteObject(&s3.DeleteObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(key),
@@ -150,8 +143,11 @@ func s3Delete(c *gin.Context) {
 			Bucket: aws.String(bucket),
 			Key:    aws.String(key),
 		})
-		c.String(200, fmt.Sprintf("Deleted '%s#%s' from S3", bucket, key))
+		msg := fmt.Sprintf("Deleted '%s#%s' from S3", bucket, key)
+		log.Debugf(msg)
+		c.String(200, msg)
 	} else {
+		log.Debugf("Deleting prefix '%s#%s' from S3", bucket, prefix)
 		iter := s3manager.NewDeleteListIterator(s3Client, &s3.ListObjectsInput{
 			Bucket: aws.String(bucket),
 			Prefix: aws.String(prefix),
@@ -162,7 +158,31 @@ func s3Delete(c *gin.Context) {
 			c.String(500, msg)
 			return
 		}
-
-		c.String(200, fmt.Sprintf("Deleted object(s) with prefix '%s' from S3 bucket '%s'", prefix, bucket))
+		msg := fmt.Sprintf("Deleted object(s) with prefix '%s' from S3 bucket '%s'", prefix, bucket)
+		log.Debugf(msg)
+		c.String(200, msg)
 	}
+}
+
+func s3Download(bucket string, key string, buf *aws.WriteAtBuffer) error {
+	_, err := s3Downloader.Download(buf, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	return err
+}
+
+func s3List(bucket string, prefix string) ([]string, error) {
+	resp, err := s3Client.ListObjectsV2(&s3.ListObjectsV2Input{
+		Bucket: aws.String(bucket),
+		Prefix: aws.String(prefix),
+	})
+	if err != nil {
+		return nil, err
+	}
+	keys := []string{}
+	for _, obj := range resp.Contents {
+		keys = append(keys, *obj.Key)
+	}
+	return keys, nil
 }
