@@ -75,16 +75,17 @@ func cacheGet(c *gin.Context) {
 
 	log.Debugf("Checking cache for '%s'", cacheKey)
 
-	var data []byte
-	if err := cacheGroup.Get(ctx, cacheKey, groupcache.AllocatingByteSliceSink(&data)); err != nil {
+	var cacheView groupcache.ByteView
+	if err := cacheGroup.Get(ctx, cacheKey, groupcache.ByteViewSink(&cacheView)); err != nil {
 		c.String(404, "Blob not found")
 		return
 	}
 
+	extraHeaders := map[string]string{
+		"Content-Disposition": fmt.Sprintf(`attachment; filename="%s"`, key),
+	}
 	log.Debugf("Sending '%s' bytes in response", cacheKey)
-
-	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, key))
-	c.Data(200, "application/octet-stream", data)
+	c.DataFromReader(200, int64(cacheView.Len()), "application/octet-stream", cacheView.Reader(), extraHeaders)
 }
 
 func cacheInvalidate(c *gin.Context) {
