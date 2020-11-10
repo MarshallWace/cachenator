@@ -11,7 +11,7 @@ Features:
 - Batch parallel uploads and deletes
 - Max memory limits with LRU evictions
 - Fast cache keys invalidation
-- Keys prefix pre-warming (soon)
+- Async cache pre-warming with keys prefix
 - Access multiple S3 endpoints (on-prem + AWS) (soon)
 
 <img src="./docs/diagram.png">
@@ -68,31 +68,56 @@ $ docker run -d --name cache3 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.i
 ## Use
 
 ```bash
-# Put files into bucket1:blob1 and bucket1:blob2
+##########
+# Upload #
+##########
+
 curl "http://localhost:8080/upload?bucket=bucket1" \
-  -F "files=@/path/blob1" \
-  -F "files=@/path/blob2"
+  -F "files=@blob1"
 
-# Put file into bucket1:folder/blob3
 curl "http://localhost:8080/upload?bucket=bucket1&path=folder" \
-  -F "files=@/path/blob3"
+  -F "files=@blob2" \
+  -F "files=@blob3" \
+  -F "files=@blob4"
 
-# First request takes longer as cache gets filled from S3
+#######
+# Get #
+#######
+
+# First request fills cache from S3
 curl "http://localhost:8080/get?bucket=bucket1&key=blob1" > blob1
 
 # 2nd+ requests served from memory
 curl "http://localhost:8080/get?bucket=bucket1&key=blob1" > blob1
 
-# Hitting any other node will get the hot blob from its owner and cache it as well before returning
+# Hitting other nodes will get the blob from the shard owner and cache it as well before returning
 curl "http://localhost:8081/get?bucket=bucket1&key=blob1" > blob1
 curl "http://localhost:8082/get?bucket=bucket1&key=blob1" > blob1
 
-# Remove blob from memory on all nodes
-curl -XPOST "http://127.0.0.1:8080/invalidate?bucket=bucket1&key=blob1"
+############
+# Pre-warm #
+############
 
-# Remove blob1 from s3
-curl -XDELETE "http://127.0.0.1:8080/delete?bucket=bucket1&key=blob1"
+# Pre-pull in the background and cache keys 'folder/[blob2/blob3/blob4]'
+curl -XPOST "http://localhost:8080/prewarm?bucket=bucket1&prefix=folder/blob"
 
-# Remove all blobs with prefix from s3
-curl -XDELETE "http://127.0.0.1:8080/delete?bucket=bucket1&prefix=blob"
+# Served straight from memory
+curl "http://localhost:8080/get?bucket=bucket1&key=folder/blob2" > blob2
+
+##############
+# Invalidate #
+##############
+
+# Remove blob1 from memory on all nodes
+curl -XPOST "http://localhost:8080/invalidate?bucket=bucket1&key=blob1"
+
+##########
+# Delete #
+##########
+
+# Delete only blob1 from S3
+curl -XDELETE "http://localhost:8080/delete?bucket=bucket1&key=blob1"
+
+# Delete keys 'folder/[blob2/blob3/blob4]' from S3
+curl -XDELETE "http://localhost:8080/delete?bucket=bucket1&prefix=folder/blob"
 ```
