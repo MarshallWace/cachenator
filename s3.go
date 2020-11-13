@@ -1,3 +1,7 @@
+// Copyright 2020 Adrian Chifor, Marshall Wace
+// SPDX-FileCopyrightText: 2020 Marshall Wace <opensource@mwam.com>
+// SPDX-License-Identifier: GPL-3.0-only
+
 package main
 
 import (
