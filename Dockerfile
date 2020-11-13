@@ -12,7 +12,7 @@ RUN go build -o /go/bin/cachenator
 # Runner
 FROM alpine
 
-LABEL org.opencontainers.image.source https://github.com/adrianchifor/cachenator
+LABEL org.opencontainers.image.source https://github.com/MarshallWace/cachenator
 
 RUN apk add --no-cache ca-certificates && update-ca-certificates
 

@@ -1,6 +1,6 @@
 # Cachenator
 
-[![Docker](https://github.com/adrianchifor/cachenator/workflows/Publish%20Docker/badge.svg)](https://github.com/adrianchifor/cachenator/actions?query=workflow%3A%22Publish+Docker%22) [![Go Report Card](https://goreportcard.com/badge/github.com/adrianchifor/cachenator)](https://goreportcard.com/report/github.com/adrianchifor/cachenator)
+[![Docker](https://github.com/MarshallWace/cachenator/workflows/Publish%20Docker/badge.svg)](https://github.com/MarshallWace/cachenator/actions?query=workflow%3A%22Publish+Docker%22) [![Go Report Card](https://goreportcard.com/badge/github.com/MarshallWace/cachenator)](https://goreportcard.com/report/github.com/MarshallWace/cachenator)
 
 Distributed, sharded in-memory cache and proxy for S3.
 
@@ -21,7 +21,7 @@ Features:
 ## Run
 
 ```
-$ docker run -it ghcr.io/adrianchifor/cachenator --help
+$ docker run -it ghcr.io/marshallwace/cachenator --help
 Usage of /cachenator:
   -host string
     	Host/IP to identify self in peers list (default "localhost")
@@ -52,15 +52,15 @@ Usage of /cachenator:
   -version
     	Version
 
-$ docker run -d --name cache1 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/cachenator \
+$ docker run -d --name cache1 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/marshallwace/cachenator \
   --port 8080 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 
-$ docker run -d --name cache2 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/cachenator \
+$ docker run -d --name cache2 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/marshallwace/cachenator \
   --port 8081 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 
-$ docker run -d --name cache3 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/adrianchifor/cachenator \
+$ docker run -d --name cache3 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/marshallwace/cachenator \
   --port 8082 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 ```

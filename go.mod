@@ -1,4 +1,4 @@
-module github.com/adrianchifor/cachenator
+module github.com/MarshallWace/cachenator
 
 go 1.15
 
