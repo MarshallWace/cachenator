@@ -32,6 +32,8 @@ func init() {
 	flag.StringVar(&host, "host", "localhost", "Host/IP to identify self in peers list")
 	flag.IntVar(&port, "port", 8080, "Server port")
 	flag.StringVar(&s3Endpoint, "s3-endpoint", "", "Custom S3 endpoint URL (defaults to AWS)")
+	flag.BoolVar(&s3ForcePathStyle, "s3-force-path-style", false,
+		"Force S3 path bucket addressing (endpoint/bucket/key vs. bucket.endpoint/key) (default false)")
 	flag.Int64Var(&uploadPartSize, "s3-upload-part-size", 5,
 		"Buffer size in megabytes when uploading blob chunks to S3 (minimum 5)")
 	flag.IntVar(&uploadConcurrency, "s3-upload-concurrency", 10,
