@@ -8,6 +8,9 @@ TMP_BLOB="/tmp/cachenator_test"
 CACHE="http://localhost:8080"
 CACHE2="http://localhost:8081"
 CACHE3="http://localhost:8082"
+CACHE_METRICS="http://localhost:9095"
+CACHE2_METRICS="http://localhost:9096"
+CACHE3_METRICS="http://localhost:9097"
 AWS_ENDPOINT="http://localhost:4566"
 
 UPLOAD() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
@@ -44,11 +47,11 @@ try_command aws || {
 
 run_cachenator() {
   export AWS_REGION="eu-west-2"
-  $DIR/../bin/cachenator -port 8080 -peers $CACHE,$CACHE2,$CACHE3 \
+  $DIR/../bin/cachenator -port 8080 -metrics-port 9095 -peers $CACHE,$CACHE2,$CACHE3 \
     -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
-  $DIR/../bin/cachenator -port 8081 -peers $CACHE,$CACHE2,$CACHE3 \
+  $DIR/../bin/cachenator -port 8081 -metrics-port 9096 -peers $CACHE,$CACHE2,$CACHE3 \
     -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
-  $DIR/../bin/cachenator -port 8082 -peers $CACHE,$CACHE2,$CACHE3 \
+  $DIR/../bin/cachenator -port 8082 -metrics-port 9097 -peers $CACHE,$CACHE2,$CACHE3 \
     -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
 }
 

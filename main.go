@@ -31,6 +31,7 @@ var (
 func init() {
 	flag.StringVar(&host, "host", "localhost", "Host/IP to identify self in peers list")
 	flag.IntVar(&port, "port", 8080, "Server port")
+	flag.IntVar(&metricsPort, "metrics-port", 9095, "Prometheus metrics port")
 	flag.StringVar(&s3Endpoint, "s3-endpoint", "", "Custom S3 endpoint URL (defaults to AWS)")
 	flag.BoolVar(&s3ForcePathStyle, "s3-force-path-style", false,
 		"Force S3 path bucket addressing (endpoint/bucket/key vs. bucket.endpoint/key) (default false)")
@@ -59,6 +60,8 @@ func main() {
 	checkFlags()
 	initS3()
 	initCachePool()
+	initMetrics()
+	go collectMetrics()
 	runServer()
 }
 
@@ -116,6 +119,7 @@ func runServer() {
 
 	log.Infof("Running: %s", strings.Join(os.Args, " "))
 
+	go runMetricsServer()
 	go serverGracefulShutdown(server, quit, done)
 
 	log.Infof("HTTP server is ready to handle requests at %s", listenAddr)

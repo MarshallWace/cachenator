@@ -32,3 +32,15 @@ load helpers.sh
   [[ "$status" -eq 0 ]]
   [[ "$output" == "404" ]]
 }
+
+# Metrics
+
+@test "checking if cluster is exposing prometheus metrics" {
+  nodes=("$CACHE_METRICS" "$CACHE2_METRICS" "$CACHE3_METRICS")
+  for node in "${nodes[@]}"; do
+    run GET "$node/metrics"
+    [[ "$status" -eq 0 ]]
+    [[ "$output" == "200" ]]
+    [[ "$(head -n1 $TMP_BLOB)" == "# HELP cachenator_cache_bytes Current (main/hot) cache bytes" ]]
+  done
+}
