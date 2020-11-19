@@ -20,6 +20,7 @@ import (
 
 var (
 	s3Endpoint          string
+	s3ForcePathStyle    bool
 	s3Client            s3iface.S3API
 	uploadPartSize      int64
 	uploadConcurrency   int
@@ -31,7 +32,8 @@ var (
 
 func initS3() {
 	s3Session, err := session.NewSession(&aws.Config{
-		Endpoint: aws.String(s3Endpoint),
+		Endpoint:         aws.String(s3Endpoint),
+		S3ForcePathStyle: aws.Bool(s3ForcePathStyle),
 	})
 	if err != nil {
 		log.Fatalf("Failed to initialize S3 session: %v", err)

@@ -39,7 +39,7 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm/v7,linux/arm64
           tags: ${{ env.BASE_IMAGE }}:latest
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' }}
           cache-to: type=local,dest=/tmp/.buildx-cache
 
       - name: Set tagged image env
