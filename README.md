@@ -30,6 +30,8 @@ Usage of /cachenator:
     	Max cache size in megabytes. If size goes above, oldest keys will be evicted (default 512)
   -max-multipart-memory int
     	Max memory in megabytes for /upload multipart form parsing (default 128)
+  -metrics-port int
+    	Prometheus metrics port (default 9095)
   -peers string
     	Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')
   -port int
@@ -40,6 +42,8 @@ Usage of /cachenator:
     	Size in megabytes to request from S3 for each blob chunk (minimum 5) (default 5)
   -s3-endpoint string
     	Custom S3 endpoint URL (defaults to AWS)
+  -s3-force-path-style
+    	Force S3 path bucket addressing (endpoint/bucket/key vs. bucket.endpoint/key) (default false)
   -s3-upload-concurrency int
     	Number of goroutines to spin up when uploading blob chunks to S3 (default 10)
   -s3-upload-part-size int
@@ -54,15 +58,15 @@ Usage of /cachenator:
     	Version
 
 $ docker run -d --name cache1 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/marshallwace/cachenator \
-  --port 8080 \
+  --port 8080 --metrics-port 9095 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 
 $ docker run -d --name cache2 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/marshallwace/cachenator \
-  --port 8081 \
+  --port 8081 --metrics-port 9096 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 
 $ docker run -d --name cache3 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/marshallwace/cachenator \
-  --port 8082 \
+  --port 8082 --metrics-port 9097 \
   --peers http://localhost:8080,http://localhost:8081,http://localhost:8082
 ```
 
@@ -121,4 +125,10 @@ curl -XDELETE "http://localhost:8080/delete?bucket=bucket1&key=blob1"
 
 # Delete keys 'folder/[blob2/blob3/blob4]' from S3
 curl -XDELETE "http://localhost:8080/delete?bucket=bucket1&prefix=folder/blob"
+
+###########
+# Metrics #
+###########
+
+curl "http://localhost:9095/metrics"
 ```
