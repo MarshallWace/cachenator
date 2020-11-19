@@ -12,6 +12,7 @@ Features:
 - Max memory limits with LRU evictions
 - Fast cache keys invalidation
 - Async cache pre-warming with keys prefix
+- Prometheus metrics
 - Access multiple S3 endpoints (on-prem + AWS) (soon)
 
 <img src="./docs/diagram.png">
