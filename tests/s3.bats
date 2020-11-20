@@ -29,6 +29,20 @@ load helpers.sh
   [[ "$status" -eq 0 ]]
 }
 
+# Get
+
+@test "getting blob from test bucket" {
+  run GET "$CACHE/get?bucket=$BUCKET&key=blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+  [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
+
+  run GET "$CACHE/get?bucket=$BUCKET&key=folder/subfolder/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+  [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
+}
+
 # Delete
 
 @test "deleting blob from test bucket" {
@@ -47,15 +61,6 @@ load helpers.sh
 
   run AWS s3 ls s3://$BUCKET//folder/subfolder
   [ "$status" -eq 1 ]
-}
-
-# Get
-
-@test "getting blob from test bucket" {
-  run GET "$CACHE/get?bucket=$BUCKET&key=blob"
-  [[ "$status" -eq 0 ]]
-  [[ "$output" == "200" ]]
-  [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
 }
 
 # Prewarm
