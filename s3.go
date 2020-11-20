@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -80,9 +81,12 @@ func s3Upload(c *gin.Context) {
 
 	for _, file := range files {
 		file := file
+
 		uploadPool.AddJob(func() {
 			key := file.Filename
-			log.Debugf("Uploading '%s#%s%s' to S3", bucket, path, key)
+			fullKey := fmt.Sprintf("%s%s", path, key)
+			log.Debugf("Uploading '%s#%s' to S3", bucket, fullKey)
+
 			body, err := file.Open()
 			if err != nil {
 				// TODO: Propagate error higher
@@ -93,15 +97,20 @@ func s3Upload(c *gin.Context) {
 
 			_, err = s3Uploader.Upload(&s3manager.UploadInput{
 				Bucket: aws.String(bucket),
-				Key:    aws.String(fmt.Sprintf("%s%s", path, key)),
+				Key:    aws.String(fullKey),
 				Body:   body,
 			})
 			if err != nil {
 				// TODO: Propagate error higher
-				log.Errorf("Failed to upload '%s' to S3: %v", key, err)
+				log.Errorf("Failed to upload '%s' to S3 bucket '%s': %v", fullKey, bucket, err)
 				return
 			}
-			log.Debugf("Upload to S3 done for '%s#%s%s'", bucket, path, key)
+			log.Debugf("Upload to S3 done for '%s#%s'", bucket, fullKey)
+
+			// Invalidate uploaded blob if in-memory
+			cacheKey := constructCacheKey(bucket, fullKey)
+			go cacheGroup.Remove(context.Background(), cacheKey)
+			log.Debugf("'%s' invalidated from cache", cacheKey)
 		})
 	}
 
@@ -151,9 +160,16 @@ func s3Delete(c *gin.Context) {
 		})
 		msg := fmt.Sprintf("Deleted '%s#%s' from S3", bucket, key)
 		log.Debugf(msg)
+
+		// Invalidate deleted blob if in-memory
+		cacheKey := constructCacheKey(bucket, key)
+		go cacheGroup.Remove(context.Background(), cacheKey)
+		log.Debugf("'%s' invalidated from cache", cacheKey)
+
 		c.String(200, msg)
 	} else {
 		log.Debugf("Deleting prefix '%s#%s' from S3", bucket, prefix)
+		keysToDelete, _ := s3List(bucket, prefix)
 		iter := s3manager.NewDeleteListIterator(s3Client, &s3.ListObjectsInput{
 			Bucket: aws.String(bucket),
 			Prefix: aws.String(prefix),
@@ -166,6 +182,16 @@ func s3Delete(c *gin.Context) {
 		}
 		msg := fmt.Sprintf("Deleted object(s) with prefix '%s' from S3 bucket '%s'", prefix, bucket)
 		log.Debugf(msg)
+
+		if keysToDelete != nil {
+			// Invalidate deleted blobs if in-memory
+			log.Debugf("Invalidating keys from cache with prefix '%s' for bucket '%s'", prefix, bucket)
+			for _, key := range keysToDelete {
+				key := key
+				go cacheGroup.Remove(context.Background(), constructCacheKey(bucket, key))
+			}
+		}
+
 		c.String(200, msg)
 	}
 }

@@ -21,6 +21,12 @@ load helpers.sh
   [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
 }
 
+@test "checking if deleted blob was removed from memory" {
+  run GET "$CACHE/get?bucket=$BUCKET&key=folder/subfolder/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "404" ]]
+}
+
 # Invalidate
 
 @test "invalidating blob from memory" {
