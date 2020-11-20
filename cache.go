@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/adrianchifor/go-parallel"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/gin-gonic/gin"
 	"github.com/mailgun/groupcache/v2"
@@ -117,22 +118,28 @@ func cachePrewarm(c *gin.Context) {
 		return
 	}
 
-	for _, key := range keys {
-		key := key
-		go func() {
-			cacheKey := constructCacheKey(bucket, key)
+	go func() {
+		getPool := parallel.SmallJobPool()
+		defer getPool.Close()
 
-			ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeout))
-			defer cancel()
+		for _, key := range keys {
+			key := key
+			// Prewarm 10 keys at a time
+			getPool.AddJob(func() {
+				cacheKey := constructCacheKey(bucket, key)
 
-			log.Debugf("Pre-warming cache with key '%s'", key)
+				ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeout))
+				defer cancel()
 
-			var tmpCacheView groupcache.ByteView
-			if err := cacheGroup.Get(ctx, cacheKey, groupcache.ByteViewSink(&tmpCacheView)); err != nil {
-				log.Errorf("Failed to pre-warm cache with key '%s': %v", cacheKey, err)
-			}
-		}()
-	}
+				log.Debugf("Pre-warming cache with key '%s'", key)
+
+				var tmpCacheView groupcache.ByteView
+				if err := cacheGroup.Get(ctx, cacheKey, groupcache.ByteViewSink(&tmpCacheView)); err != nil {
+					log.Errorf("Failed to pre-warm cache with key '%s': %v", cacheKey, err)
+				}
+			})
+		}
+	}()
 
 	c.String(200, fmt.Sprintf("Pre-warming cache in the background with prefix '%s' from S3 bucket '%s'", prefix, bucket))
 }
