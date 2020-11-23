@@ -43,6 +43,20 @@ load helpers.sh
   [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
 }
 
+# List
+
+@test "listing keys from test bucket" {
+  run GET "$CACHE/list?bucket=$BUCKET"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+  [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "3" ]]
+
+  run GET "$CACHE/list?bucket=$BUCKET&prefix=folder"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+  [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "2" ]]
+}
+
 # Delete
 
 @test "deleting blob from test bucket" {

@@ -169,7 +169,7 @@ func s3Delete(c *gin.Context) {
 		c.String(200, msg)
 	} else {
 		log.Debugf("Deleting prefix '%s#%s' from S3", bucket, prefix)
-		keysToDelete, _ := s3List(bucket, prefix)
+		keysToDelete, _ := s3ListKeys(bucket, prefix)
 		iter := s3manager.NewDeleteListIterator(s3Client, &s3.ListObjectsInput{
 			Bucket: aws.String(bucket),
 			Prefix: aws.String(prefix),
@@ -204,7 +204,30 @@ func s3Download(bucket string, key string, buf *aws.WriteAtBuffer) error {
 	return err
 }
 
-func s3List(bucket string, prefix string) ([]string, error) {
+func s3List(c *gin.Context) {
+	bucket := strings.TrimSpace(c.Query("bucket"))
+	if bucket == "" {
+		c.String(400, "'bucket' not found in querystring parameters")
+		return
+	}
+	prefix := strings.TrimSpace(c.Query("prefix"))
+
+	keys, err := s3ListKeys(bucket, prefix)
+	if err != nil {
+		msg := fmt.Sprintf("Failed to list keys in S3 bucket '%s': %v", bucket, err)
+		log.Errorf(msg)
+		c.String(500, msg)
+		return
+	}
+
+	status := 200
+	if len(keys) == 0 {
+		status = 404
+	}
+	c.JSON(status, gin.H{"keys": keys})
+}
+
+func s3ListKeys(bucket string, prefix string) ([]string, error) {
 	resp, err := s3Client.ListObjectsV2(&s3.ListObjectsV2Input{
 		Bucket: aws.String(bucket),
 		Prefix: aws.String(prefix),

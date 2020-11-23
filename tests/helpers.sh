@@ -40,6 +40,10 @@ try_command curl || {
   echo "curl not found, install: https://curl.se/download.html"
   exit 1
 }
+try_command jq || {
+  echo "jq not found, install: https://stedolan.github.io/jq/download/"
+  exit 1
+}
 try_command aws || {
   echo "aws not found, install: pip3 install --user awscli"
   exit 1

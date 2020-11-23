@@ -106,7 +106,7 @@ func cachePrewarm(c *gin.Context) {
 	}
 
 	log.Debugf("Pre-warming cache with prefix '%s#%s'", bucket, prefix)
-	keys, err := s3List(bucket, prefix)
+	keys, err := s3ListKeys(bucket, prefix)
 	if err != nil {
 		msg := fmt.Sprintf("Failed to list keys with prefix '%s' in S3 bucket '%s': %v", prefix, bucket, err)
 		log.Errorf(msg)
