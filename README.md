@@ -99,6 +99,12 @@ curl "http://localhost:8080/get?bucket=bucket1&key=blob1" > blob1
 curl "http://localhost:8081/get?bucket=bucket1&key=blob1" > blob1
 curl "http://localhost:8082/get?bucket=bucket1&key=blob1" > blob1
 
+########
+# List #
+########
+
+curl "http://localhost:8080/list?bucket=bucket1&prefix=folder" | jq '.keys'
+
 ############
 # Pre-warm #
 ############

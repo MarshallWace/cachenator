@@ -15,6 +15,10 @@ load helpers.sh
 }
 
 @test "getting prewarmed blob from memory" {
+  run GET "$CACHE/get?bucket=$BUCKET&key=somerandomblob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "404" ]]
+
   run GET "$CACHE/get?bucket=$BUCKET&key=folder/blob"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
@@ -30,6 +34,14 @@ load helpers.sh
 # Invalidate
 
 @test "invalidating blob from memory" {
+  run POST "$CACHE/invalidate?bucket=$BUCKET"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "400" ]]
+
+  run POST "$CACHE/invalidate"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "400" ]]
+
   run POST "$CACHE/invalidate?bucket=$BUCKET&key=blob"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]

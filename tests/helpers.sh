@@ -13,10 +13,9 @@ CACHE2_METRICS="http://localhost:9096"
 CACHE3_METRICS="http://localhost:9097"
 AWS_ENDPOINT="http://localhost:4566"
 
-UPLOAD() { curl -s -o /dev/null -w '%{http_code}' "$@"; }
+POST() { curl -X POST -s -o /dev/null -w '%{http_code}' "$@"; }
 GET() { curl -s -o $TMP_BLOB -w '%{http_code}' "$1"; }
 DELETE() { curl -X DELETE -s -o /dev/null -w '%{http_code}' "$1"; }
-POST() { curl -X POST -s -o /dev/null -w '%{http_code}' "$1"; }
 AWS() { aws --endpoint=$AWS_ENDPOINT "$@"; }
 
 SHA() { echo $(sha256sum "$1" | awk '{print $1}'); }
@@ -38,6 +37,10 @@ try_command docker || {
 }
 try_command curl || {
   echo "curl not found, install: https://curl.se/download.html"
+  exit 1
+}
+try_command jq || {
+  echo "jq not found, install: https://stedolan.github.io/jq/download/"
   exit 1
 }
 try_command aws || {

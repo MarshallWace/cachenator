@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.10.0"
+const version string = "0.11.0"
 
 var (
 	host               string
@@ -103,6 +103,7 @@ func runServer() {
 	router.MaxMultipartMemory = maxMultipartMemory << 20
 	router.POST("/upload", s3Upload)
 	router.DELETE("/delete", s3Delete)
+	router.GET("/list", s3List)
 	router.GET("/get", cacheGet)
 	router.POST("/prewarm", cachePrewarm)
 	router.POST("/invalidate", cacheInvalidate)
