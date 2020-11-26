@@ -118,7 +118,14 @@ func runServer() {
 		Handler: router,
 	}
 
-	log.Infof("Running: %s", strings.Join(os.Args, " "))
+	fmt.Println(`
+		┌────────────────────────────────────────┐
+		│░█▀▀░█▀█░█▀▀░█░█░█▀▀░█▀█░█▀█░▀█▀░█▀█░█▀▄│
+		│░█░░░█▀█░█░░░█▀█░█▀▀░█░█░█▀█░░█░░█░█░█▀▄│
+		│░▀▀▀░▀░▀░▀▀▀░▀░▀░▀▀▀░▀░▀░▀░▀░░▀░░▀▀▀░▀░▀│
+		└────────────────────────────────────────┘
+	`)
+	log.Infof("Running (v%s): %s", version, strings.Join(os.Args, " "))
 
 	go runMetricsServer()
 	go serverGracefulShutdown(server, quit, done)
