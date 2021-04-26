@@ -1,5 +1,5 @@
-// Copyright 2020 Adrian Chifor, Marshall Wace
-// SPDX-FileCopyrightText: 2020 Marshall Wace <opensource@mwam.com>
+// Copyright 2021 Adrian Chifor, Marshall Wace
+// SPDX-FileCopyrightText: 2021 Marshall Wace <opensource@mwam.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
 package main
@@ -19,6 +19,8 @@ import (
 
 var (
 	metricsPort                       int
+	httpRequestsMetric                *prometheus.CounterVec
+	httpRequestsLatencyMetric         *prometheus.GaugeVec
 	groupGetsMetric                   prometheus.Gauge
 	groupCacheHitsMetric              prometheus.Gauge
 	groupPeersGetHighestLatencyMetric prometheus.Gauge
@@ -37,6 +39,14 @@ var (
 )
 
 func initMetrics() {
+	httpRequestsMetric = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "cachenator_http_requests_total",
+		Help: "Total number of HTTP requests",
+	}, []string{"method", "path", "status"})
+	httpRequestsLatencyMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "cachenator_http_requests_latency",
+		Help: "HTTP requests latency",
+	}, []string{"method", "path", "status"})
 	groupGetsMetric = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "cachenator_gets_total",
 		Help: "Total number of get requests",
