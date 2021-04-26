@@ -1,5 +1,5 @@
-// Copyright 2020 Adrian Chifor, Marshall Wace
-// SPDX-FileCopyrightText: 2020 Marshall Wace <opensource@mwam.com>
+// Copyright 2021 Adrian Chifor, Marshall Wace
+// SPDX-FileCopyrightText: 2021 Marshall Wace <opensource@mwam.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
 package main
@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.12.0"
+const version string = "0.13.0"
 
 var (
 	host               string
@@ -89,17 +89,20 @@ func runServer() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
+	router := gin.Default()
+
 	listenAddr := fmt.Sprintf("127.0.0.1:%d", port)
 	if os.Getenv("GIN_MODE") == "release" {
 		listenAddr = fmt.Sprintf("0.0.0.0:%d", port)
 		log.SetFormatter(&log.JSONFormatter{})
+		router.Use(jsonLogMiddleware())
 	} else {
 		log.SetFormatter(&log.TextFormatter{
 			FullTimestamp: true,
 		})
 	}
 
-	router := gin.Default()
+	router.Use(httpMetricsMiddleware())
 	router.MaxMultipartMemory = maxMultipartMemory << 20
 	router.POST("/upload", s3Upload)
 	router.DELETE("/delete", s3Delete)

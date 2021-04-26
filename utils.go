@@ -1,5 +1,5 @@
-// Copyright 2020 Adrian Chifor, Marshall Wace
-// SPDX-FileCopyrightText: 2020 Marshall Wace <opensource@mwam.com>
+// Copyright 2021 Adrian Chifor, Marshall Wace
+// SPDX-FileCopyrightText: 2021 Marshall Wace <opensource@mwam.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
 package main
@@ -9,9 +9,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -46,4 +48,70 @@ func serverGracefulShutdown(server *http.Server, quit <-chan os.Signal, done cha
 
 func constructCacheKey(bucket string, key string) string {
 	return fmt.Sprintf("%s#%s", bucket, key)
+}
+
+func jsonLogMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		duration := getDurationInMillseconds(start)
+
+		entry := log.WithFields(log.Fields{
+			"client_ip": getClientIP(c),
+			"duration":  duration,
+			"method":    c.Request.Method,
+			"path":      c.Request.RequestURI,
+			"status":    c.Writer.Status(),
+			"referrer":  c.Request.Referer(),
+		})
+
+		if c.Writer.Status() >= 500 {
+			entry.Error(c.Errors.String())
+		} else {
+			entry.Info("")
+		}
+	}
+}
+
+func httpMetricsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		duration := getDurationInMillseconds(start)
+
+		httpRequestsMetric.WithLabelValues(
+			c.Request.Method,
+			c.Request.RequestURI,
+			strconv.Itoa(c.Writer.Status()),
+		).Inc()
+
+		httpRequestsLatencyMetric.WithLabelValues(
+			c.Request.Method,
+			c.Request.RequestURI,
+			strconv.Itoa(c.Writer.Status()),
+		).Set(duration)
+	}
+}
+
+func getDurationInMillseconds(start time.Time) float64 {
+	end := time.Now()
+	duration := end.Sub(start)
+	milliseconds := float64(duration) / float64(time.Millisecond)
+	rounded := float64(int(milliseconds*100+.5)) / 100
+	return rounded
+}
+
+func getClientIP(c *gin.Context) string {
+	requester := c.Request.Header.Get("X-Forwarded-For")
+	if len(requester) == 0 {
+		requester = c.Request.Header.Get("X-Real-IP")
+	}
+	if len(requester) == 0 {
+		requester = c.Request.RemoteAddr
+	}
+	if strings.Contains(requester, ",") {
+		requester = strings.Split(requester, ",")[0]
+	}
+
+	return requester
 }
