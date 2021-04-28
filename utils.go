@@ -75,6 +75,10 @@ func jsonLogMiddleware() gin.HandlerFunc {
 
 func httpMetricsMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if strings.HasPrefix(c.Request.RequestURI, "/_groupcache") {
+			return
+		}
+
 		start := time.Now()
 		c.Next()
 		duration := getDurationInMillseconds(start)
