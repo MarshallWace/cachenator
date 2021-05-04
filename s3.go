@@ -228,16 +228,21 @@ func s3List(c *gin.Context) {
 }
 
 func s3ListKeys(bucket string, prefix string) ([]string, error) {
-	resp, err := s3Client.ListObjectsV2(&s3.ListObjectsV2Input{
+	keys := []string{}
+	err := s3Client.ListObjectsV2Pages(&s3.ListObjectsV2Input{
 		Bucket: aws.String(bucket),
 		Prefix: aws.String(prefix),
-	})
+	},
+		func(page *s3.ListObjectsV2Output, lastPage bool) bool {
+			for _, obj := range page.Contents {
+				keys = append(keys, *obj.Key)
+			}
+			return !lastPage
+		})
+
 	if err != nil {
 		return nil, err
 	}
-	keys := []string{}
-	for _, obj := range resp.Contents {
-		keys = append(keys, *obj.Key)
-	}
+
 	return keys, nil
 }
