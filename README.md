@@ -24,6 +24,8 @@ Features:
 ```
 $ docker run -it ghcr.io/marshallwace/cachenator --help
 Usage of /cachenator:
+  -disable-http-metrics
+    	Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)
   -host string
     	Host/IP to identify self in peers list (default "localhost")
   -max-cache-size int
