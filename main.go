@@ -17,15 +17,16 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.13.2"
+const version string = "0.13.3"
 
 var (
-	host               string
-	port               int
-	maxMultipartMemory int64
-	peersFlag          string
-	verbose            bool
-	versionFlag        bool
+	host                   string
+	port                   int
+	maxMultipartMemory     int64
+	peersFlag              string
+	disableHttpMetricsFlag bool
+	verbose                bool
+	versionFlag            bool
 )
 
 func init() {
@@ -51,6 +52,8 @@ func init() {
 	flag.IntVar(&timeout, "timeout", 5000, "Get blob timeout in milliseconds")
 	flag.StringVar(&peersFlag, "peers", "",
 		"Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')")
+	flag.BoolVar(&disableHttpMetricsFlag, "disable-http-metrics", false,
+		"Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)")
 	flag.BoolVar(&verbose, "verbose", false, "Verbose logs")
 	flag.BoolVar(&versionFlag, "version", false, "Version")
 	flag.Parse()
@@ -102,7 +105,10 @@ func runServer() {
 		})
 	}
 
-	router.Use(httpMetricsMiddleware())
+	if !disableHttpMetricsFlag {
+		router.Use(httpMetricsMiddleware())
+	}
+
 	router.MaxMultipartMemory = maxMultipartMemory << 20
 	router.POST("/upload", s3Upload)
 	router.DELETE("/delete", s3Delete)
