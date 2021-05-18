@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/adrianchifor/go-parallel"
 	"github.com/aws/aws-sdk-go/aws"
@@ -79,6 +80,9 @@ func s3Upload(c *gin.Context) {
 	uploadPool := parallel.SmallJobPool()
 	defer uploadPool.Close()
 
+	uploadsFailed := []string{}
+	uploadsFailedMutex := &sync.Mutex{}
+
 	for _, file := range files {
 		file := file
 
@@ -89,8 +93,10 @@ func s3Upload(c *gin.Context) {
 
 			body, err := file.Open()
 			if err != nil {
-				// TODO: Propagate error higher
 				log.Errorf("Failed to read '%s' file when trying to upload to S3: %v", key, err)
+				uploadsFailedMutex.Lock()
+				defer uploadsFailedMutex.Unlock()
+				uploadsFailed = append(uploadsFailed, fullKey)
 				return
 			}
 			defer body.Close()
@@ -101,8 +107,10 @@ func s3Upload(c *gin.Context) {
 				Body:   body,
 			})
 			if err != nil {
-				// TODO: Propagate error higher
 				log.Errorf("Failed to upload '%s' to S3 bucket '%s': %v", fullKey, bucket, err)
+				uploadsFailedMutex.Lock()
+				defer uploadsFailedMutex.Unlock()
+				uploadsFailed = append(uploadsFailed, fullKey)
 				return
 			}
 			log.Debugf("Upload to S3 done for '%s#%s'", bucket, fullKey)
@@ -123,7 +131,18 @@ func s3Upload(c *gin.Context) {
 		return
 	}
 
-	c.String(200, fmt.Sprintf("Uploaded %d object(s) to S3 bucket '%s'", len(files), bucket))
+	if len(uploadsFailed) > 0 {
+		c.JSON(500, gin.H{
+			"error":         "Failed to upload some blobs",
+			"uploadsFailed": uploadsFailed,
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": fmt.Sprintf("Uploaded %d object(s) to S3 bucket '%s'", len(files), bucket),
+		"error":   "",
+	})
 }
 
 func s3Delete(c *gin.Context) {

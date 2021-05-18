@@ -31,6 +31,14 @@ load helpers.sh
   [[ "$output" == "404" ]]
 }
 
+# Upload
+
+@test "trying to upload while S3 is down" {
+  run POST "$CACHE/upload?bucket=$BUCKET" -F "files=@$DIR/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "500" ]]
+}
+
 # Invalidate
 
 @test "invalidating blob from memory" {
