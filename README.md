@@ -53,7 +53,7 @@ Usage of /cachenator:
   -timeout int
     	Get blob timeout in milliseconds (default 5000)
   -ttl int
-    	Blob time-to-live in cache in minutes (default 60)
+    	Blob time-to-live in cache in minutes (0 to never expire) (default 60)
   -verbose
     	Verbose logs
   -version
