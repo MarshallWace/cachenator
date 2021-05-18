@@ -65,12 +65,12 @@ func cacheFiller(ctx context.Context, cacheKey string, dest groupcache.Sink) err
 func cacheGet(c *gin.Context) {
 	bucket := strings.TrimSpace(c.Query("bucket"))
 	if bucket == "" {
-		c.String(400, "'bucket' not found in querystring parameters")
+		c.JSON(400, gin.H{"error": "'bucket' not found in querystring parameters"})
 		return
 	}
 	key := strings.TrimSpace(c.Query("key"))
 	if key == "" {
-		c.String(400, "'key' not found in querystring parameters")
+		c.JSON(400, gin.H{"error": "'key' not found in querystring parameters"})
 		return
 	}
 	cacheKey := constructCacheKey(bucket, key)
@@ -82,7 +82,7 @@ func cacheGet(c *gin.Context) {
 
 	var cacheView groupcache.ByteView
 	if err := cacheGroup.Get(ctx, cacheKey, groupcache.ByteViewSink(&cacheView)); err != nil {
-		c.String(404, fmt.Sprintf("Blob '%s' not found", cacheKey))
+		c.JSON(404, gin.H{"error": fmt.Sprintf("Blob '%s' not found", cacheKey)})
 		return
 	}
 
@@ -96,12 +96,12 @@ func cacheGet(c *gin.Context) {
 func cachePrewarm(c *gin.Context) {
 	bucket := strings.TrimSpace(c.Query("bucket"))
 	if bucket == "" {
-		c.String(400, "'bucket' not found in querystring parameters")
+		c.JSON(400, gin.H{"error": "'bucket' not found in querystring parameters"})
 		return
 	}
 	prefix := strings.TrimSpace(c.Query("prefix"))
 	if prefix == "" {
-		c.String(400, "'prefix' not found in querystring parameters")
+		c.JSON(400, gin.H{"error": "'prefix' not found in querystring parameters"})
 		return
 	}
 
@@ -110,11 +110,11 @@ func cachePrewarm(c *gin.Context) {
 	if err != nil {
 		msg := fmt.Sprintf("Failed to list keys with prefix '%s' in S3 bucket '%s': %v", prefix, bucket, err)
 		log.Errorf(msg)
-		c.String(500, msg)
+		c.JSON(500, gin.H{"error": msg})
 		return
 	}
 	if len(keys) == 0 {
-		c.String(404, fmt.Sprintf("No keys found with prefix '%s' in S3 bucket '%s'", prefix, bucket))
+		c.JSON(404, gin.H{"error": fmt.Sprintf("No keys found with prefix '%s' in S3 bucket '%s'", prefix, bucket)})
 		return
 	}
 
@@ -141,23 +141,29 @@ func cachePrewarm(c *gin.Context) {
 		}
 	}()
 
-	c.String(200, fmt.Sprintf("Pre-warming cache in the background with prefix '%s' from S3 bucket '%s'", prefix, bucket))
+	c.JSON(200, gin.H{
+		"message": fmt.Sprintf("Pre-warming cache in the background with prefix '%s' from S3 bucket '%s'", prefix, bucket),
+		"error":   "",
+	})
 }
 
 func cacheInvalidate(c *gin.Context) {
 	bucket := strings.TrimSpace(c.Query("bucket"))
 	if bucket == "" {
-		c.String(400, "'bucket' not found in querystring parameters")
+		c.JSON(400, gin.H{"error": "'bucket' not found in querystring parameters"})
 		return
 	}
 	key := strings.TrimSpace(c.Query("key"))
 	if key == "" {
-		c.String(400, "'key' not found in querystring parameters")
+		c.JSON(400, gin.H{"error": "'key' not found in querystring parameters"})
 		return
 	}
 	cacheKey := constructCacheKey(bucket, key)
 	cacheGroup.Remove(context.Background(), cacheKey)
 	msg := fmt.Sprintf("'%s' invalidated from cache", cacheKey)
 	log.Debugf(msg)
-	c.String(200, msg)
+	c.JSON(200, gin.H{
+		"message": msg,
+		"error":   "",
+	})
 }

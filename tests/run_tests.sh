@@ -12,7 +12,7 @@ source $DIR/helpers.sh
 trap cleanup ERR
 
 echo -e "\nRunning AWS S3 localstack"
-docker run -d --name localstack-s3 -e SERVICES=s3 -p 4566:4566 localstack/localstack:0.12.9
+docker run -d --name localstack-s3 -e SERVICES=s3 -p 4566:4566 docker.io/localstack/localstack:0.12.9
 echo -e "Waiting 45s for AWS S3 localstack to be ready ..."
 sleep 45
 

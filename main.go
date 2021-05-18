@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.13.3"
+const version string = "0.14.0"
 
 var (
 	host                   string
@@ -119,7 +119,7 @@ func runServer() {
 	router.GET("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
 	router.DELETE("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
 	router.GET("/healthz", func(c *gin.Context) {
-		c.String(200, "UP")
+		c.String(200, fmt.Sprintf("Version: %s", version))
 	})
 
 	server := &http.Server{
