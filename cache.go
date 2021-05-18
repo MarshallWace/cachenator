@@ -49,9 +49,14 @@ func cacheFiller(ctx context.Context, cacheKey string, dest groupcache.Sink) err
 		return err
 	}
 
-	log.Debugf("Pulled '%s' into buffer, adding to cache with TTL %dm", cacheKey, ttl)
-
-	err = dest.SetBytes(buf.Bytes(), time.Now().Add(time.Minute*time.Duration(ttl)))
+	if ttl > 0 {
+		log.Debugf("Pulled '%s' into buffer, adding to cache with %dm TTL", cacheKey, ttl)
+		err = dest.SetBytes(buf.Bytes(), time.Now().Add(time.Minute*time.Duration(ttl)))
+	} else {
+		// "Disable" TTL - expire in 10 years
+		log.Debugf("Pulled '%s' into buffer, adding to cache with 10 year TTL", cacheKey)
+		err = dest.SetBytes(buf.Bytes(), time.Now().Add(time.Hour*87650))
+	}
 	if err != nil {
 		log.Errorf("Failed to fill cache sink with '%s': %v", key, err)
 		return err

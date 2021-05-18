@@ -17,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.14.0"
+const version string = "0.14.1"
 
 var (
 	host                   string
@@ -48,7 +48,7 @@ func init() {
 		"Max memory in megabytes for /upload multipart form parsing")
 	flag.Int64Var(&maxCacheSize, "max-cache-size", 512,
 		"Max cache size in megabytes. If size goes above, oldest keys will be evicted")
-	flag.IntVar(&ttl, "ttl", 60, "Blob time-to-live in cache in minutes")
+	flag.IntVar(&ttl, "ttl", 60, "Blob time-to-live in cache in minutes (0 to never expire)")
 	flag.IntVar(&timeout, "timeout", 5000, "Get blob timeout in milliseconds")
 	flag.StringVar(&peersFlag, "peers", "",
 		"Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')")
