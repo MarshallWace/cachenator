@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/adrianchifor/go-parallel"
 	"github.com/aws/aws-sdk-go/aws"
@@ -17,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/gin-gonic/gin"
+	"github.com/mailgun/groupcache/v2"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -53,7 +55,7 @@ func initS3() {
 	})
 }
 
-func s3Upload(c *gin.Context) {
+func restS3Upload(c *gin.Context) {
 	form, err := c.MultipartForm()
 	if err != nil {
 		log.Errorf("Failed to parse multipart form: %v", err)
@@ -116,9 +118,7 @@ func s3Upload(c *gin.Context) {
 			log.Debugf("Upload to S3 done for '%s#%s'", bucket, fullKey)
 
 			// Invalidate uploaded blob if in-memory
-			cacheKey := constructCacheKey(bucket, fullKey)
-			go cacheGroup.Remove(context.Background(), cacheKey)
-			log.Debugf("'%s' invalidated from cache", cacheKey)
+			go cacheInvalidate(bucket, fullKey)
 		})
 	}
 
@@ -145,7 +145,46 @@ func s3Upload(c *gin.Context) {
 	})
 }
 
-func s3Delete(c *gin.Context) {
+func transparentS3Put(c *gin.Context) {
+	bucket := c.Param("bucket")
+	key := c.Param("key")
+
+	_, err := s3Uploader.Upload(&s3manager.UploadInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+		Body:   c.Request.Body,
+	})
+	if err != nil {
+		log.Errorf("Failed to upload '%s' to S3 bucket '%s': %v", key, bucket, err)
+		c.String(500, "")
+		return
+	}
+
+	// Invalidate uploaded blob if in-memory
+	go cacheInvalidate(bucket, key)
+
+	c.String(200, "")
+}
+
+func transparentS3Get(c *gin.Context) {
+	bucket := c.Param("bucket")
+	key := c.Param("key")
+
+	cacheKey := constructCacheKey(bucket, key)
+	log.Debugf("Checking cache for '%s'", cacheKey)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeout))
+	defer cancel()
+
+	var cacheView groupcache.ByteView
+	if err := cacheGroup.Get(ctx, cacheKey, groupcache.ByteViewSink(&cacheView)); err != nil {
+		c.String(404, "")
+		return
+	}
+
+	c.DataFromReader(200, int64(cacheView.Len()), "application/octet-stream", cacheView.Reader(), nil)
+}
+
+func restS3Delete(c *gin.Context) {
 	bucket := strings.TrimSpace(c.Query("bucket"))
 	if bucket == "" {
 		c.JSON(400, gin.H{"error": "'bucket' not found in querystring parameters"})
@@ -163,11 +202,7 @@ func s3Delete(c *gin.Context) {
 	}
 
 	if key != "" {
-		log.Debugf("Deleting key '%s#%s' from S3", bucket, key)
-		_, err := s3Client.DeleteObject(&s3.DeleteObjectInput{
-			Bucket: aws.String(bucket),
-			Key:    aws.String(key),
-		})
+		err := s3Delete(bucket, key)
 		if err != nil {
 			msg := fmt.Sprintf("Failed to delete '%s#%s' from S3: %v", bucket, key, err)
 			log.Errorf(msg)
@@ -175,25 +210,13 @@ func s3Delete(c *gin.Context) {
 			return
 		}
 
-		s3Client.WaitUntilObjectNotExists(&s3.HeadObjectInput{
-			Bucket: aws.String(bucket),
-			Key:    aws.String(key),
-		})
-		msg := fmt.Sprintf("Deleted '%s#%s' from S3", bucket, key)
-		log.Debugf(msg)
-
-		// Invalidate deleted blob if in-memory
-		cacheKey := constructCacheKey(bucket, key)
-		go cacheGroup.Remove(context.Background(), cacheKey)
-		log.Debugf("'%s' invalidated from cache", cacheKey)
-
 		c.JSON(200, gin.H{
-			"message": msg,
+			"message": fmt.Sprintf("Deleted '%s#%s' from S3", bucket, key),
 			"error":   "",
 		})
 	} else {
 		log.Debugf("Deleting prefix '%s#%s' from S3", bucket, prefix)
-		keysToDelete, _ := s3ListKeys(bucket, prefix)
+		keysToDelete, _ := s3ListKeys(bucket, prefix, "")
 		iter := s3manager.NewDeleteListIterator(s3Client, &s3.ListObjectsInput{
 			Bucket: aws.String(bucket),
 			Prefix: aws.String(prefix),
@@ -212,7 +235,7 @@ func s3Delete(c *gin.Context) {
 			log.Debugf("Invalidating keys from cache with prefix '%s' for bucket '%s'", prefix, bucket)
 			for _, key := range keysToDelete {
 				key := key
-				go cacheGroup.Remove(context.Background(), constructCacheKey(bucket, key))
+				go cacheInvalidate(bucket, key)
 			}
 		}
 
@@ -223,23 +246,50 @@ func s3Delete(c *gin.Context) {
 	}
 }
 
-func s3Download(bucket string, key string, buf *aws.WriteAtBuffer) error {
-	_, err := s3Downloader.Download(buf, &s3.GetObjectInput{
+func transparentS3Delete(c *gin.Context) {
+	bucket := c.Param("bucket")
+	key := c.Param("key")
+
+	err := s3Delete(bucket, key)
+	if err != nil {
+		log.Errorf("Failed to delete '%s' from S3 bucket '%s': %v", key, bucket, err)
+		c.String(500, "")
+		return
+	}
+	c.String(204, "")
+}
+
+func s3Delete(bucket string, key string) error {
+	_, err := s3Client.DeleteObject(&s3.DeleteObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	s3Client.WaitUntilObjectNotExists(&s3.HeadObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	log.Debugf(fmt.Sprintf("Deleted '%s#%s' from S3", bucket, key))
+
+	// Invalidate deleted blob if in-memory
+	go cacheInvalidate(bucket, key)
+
+	return nil
 }
 
-func s3List(c *gin.Context) {
+func restS3List(c *gin.Context) {
 	bucket := strings.TrimSpace(c.Query("bucket"))
 	if bucket == "" {
 		c.JSON(400, gin.H{"error": "'bucket' not found in querystring parameters"})
 		return
 	}
 	prefix := strings.TrimSpace(c.Query("prefix"))
+	delimiter := strings.TrimSpace(c.Query("delimiter"))
 
-	keys, err := s3ListKeys(bucket, prefix)
+	keys, err := s3ListKeys(bucket, prefix, delimiter)
 	if err != nil {
 		msg := fmt.Sprintf("Failed to list keys in S3 bucket '%s': %v", bucket, err)
 		log.Errorf(msg)
@@ -254,22 +304,85 @@ func s3List(c *gin.Context) {
 	c.JSON(status, gin.H{"keys": keys})
 }
 
-func s3ListKeys(bucket string, prefix string) ([]string, error) {
-	keys := []string{}
-	err := s3Client.ListObjectsV2Pages(&s3.ListObjectsV2Input{
-		Bucket: aws.String(bucket),
-		Prefix: aws.String(prefix),
-	},
-		func(page *s3.ListObjectsV2Output, lastPage bool) bool {
-			for _, obj := range page.Contents {
-				keys = append(keys, *obj.Key)
-			}
-			return !lastPage
-		})
+func transparentS3ListBuckets(c *gin.Context) {
+	s3buckets, err := s3Client.ListBuckets(&s3.ListBucketsInput{})
+	if err != nil {
+		c.XML(500, Error{"InternalError", fmt.Sprintf("Failed to list buckets from S3: %v", err)})
+		return
+	}
 
+	buckets := []Bucket{}
+	for _, bucket := range s3buckets.Buckets {
+		buckets = append(buckets, Bucket{*bucket.Name, *bucket.CreationDate})
+	}
+	c.XML(200, ListAllMyBucketsResult{buckets, Owner{
+		*s3buckets.Owner.DisplayName,
+		*s3buckets.Owner.ID,
+	}})
+}
+
+func transparentS3ListObjects(c *gin.Context) {
+	bucket := c.Param("bucket")
+	prefix := strings.TrimSpace(c.Query("prefix"))
+	delimiter := strings.TrimSpace(c.Query("delimiter"))
+
+	s3objects, s3commonPrefixes, err := s3ListObjects(bucket, prefix, delimiter)
+	if err != nil {
+		c.XML(500, Error{"InternalError", fmt.Sprintf("Failed to list objects from S3: %v", err)})
+		return
+	}
+
+	contents := []Content{}
+	for _, obj := range s3objects {
+		contents = append(contents, Content{*obj.Key, *obj.LastModified, *obj.Size, *obj.StorageClass})
+	}
+	commonPrefixes := []CommonPrefix{}
+	for _, commonPrefix := range s3commonPrefixes {
+		commonPrefixes = append(commonPrefixes, CommonPrefix{*commonPrefix.Prefix})
+	}
+
+	c.XML(200, ListBucketResult{bucket, prefix, len(s3objects), contents, commonPrefixes})
+}
+
+func s3ListKeys(bucket string, prefix string, delimiter string) ([]string, error) {
+	objects, _, err := s3ListObjects(bucket, prefix, delimiter)
 	if err != nil {
 		return nil, err
 	}
 
+	keys := []string{}
+	for _, obj := range objects {
+		keys = append(keys, *obj.Key)
+	}
+
 	return keys, nil
+}
+
+func s3ListObjects(bucket string, prefix string, delimiter string) ([]*s3.Object, []*s3.CommonPrefix, error) {
+	s3objects := []*s3.Object{}
+	s3CommonPrefixes := []*s3.CommonPrefix{}
+	err := s3Client.ListObjectsV2Pages(&s3.ListObjectsV2Input{
+		Bucket:    aws.String(bucket),
+		Prefix:    aws.String(prefix),
+		Delimiter: aws.String(delimiter),
+	},
+		func(page *s3.ListObjectsV2Output, lastPage bool) bool {
+			s3objects = append(s3objects, page.Contents...)
+			s3CommonPrefixes = append(s3CommonPrefixes, page.CommonPrefixes...)
+			return !lastPage
+		})
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return s3objects, s3CommonPrefixes, nil
+}
+
+func s3Download(bucket string, key string, buf *aws.WriteAtBuffer) error {
+	_, err := s3Downloader.Download(buf, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	return err
 }
