@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
@@ -131,7 +132,7 @@ func runServer() {
 		router.HEAD("/:bucket/*key", func(c *gin.Context) {
 			// Dummy headers and 200 response to proceed to GET
 			c.Header("Content-Length", "0")
-			c.Header("Last-Modified", "Tue, 20 Jul 2021 12:00:00 GMT")
+			c.Header("Last-Modified", time.Now().Format("Mon, 2 Jan 2006 15:04:05 MST"))
 			c.String(200, "")
 		})
 		router.GET("/:bucket/*key", transparentS3Get)
