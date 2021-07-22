@@ -11,6 +11,7 @@ import (
 type ListBucketResult struct {
 	Name           string         `xml:"Name"`
 	Prefix         string         `xml:"Prefix"`
+	Delimiter      string         `xml:"Delimiter"`
 	KeyCount       int            `xml:"KeyCount"`
 	Contents       []Content      `xml:"Contents"`
 	CommonPrefixes []CommonPrefix `xml:"CommonPrefixes"`

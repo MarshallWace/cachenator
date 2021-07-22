@@ -341,7 +341,7 @@ func transparentS3ListObjects(c *gin.Context) {
 		commonPrefixes = append(commonPrefixes, CommonPrefix{*commonPrefix.Prefix})
 	}
 
-	c.XML(200, ListBucketResult{bucket, prefix, len(s3objects), contents, commonPrefixes})
+	c.XML(200, ListBucketResult{bucket, prefix, delimiter, len(s3objects), contents, commonPrefixes})
 }
 
 func s3ListKeys(bucket string, prefix string, delimiter string) ([]string, error) {
