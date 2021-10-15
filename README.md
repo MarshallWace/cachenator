@@ -149,7 +149,8 @@ curl "http://localhost:9095/metrics"
 ### Transparent S3 usage (awscli or SDKs)
 
 ```bash
-docker run -d --name transparent_cache --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/marshallwace/cachenator --port 8083 -s3-transparent-api
+docker run -d --name transparent_cache --network host -v $HOME/.aws/:/root/.aws:ro \
+  ghcr.io/marshallwace/cachenator --port 8083 -s3-transparent-api
 
 aws --endpoint=http://localhost:8083 s3 cp blob1 s3://bucket1/blob1
 upload: blob1 to s3://bucket1/blob1
