@@ -12,6 +12,10 @@ load helpers.sh
     [[ "$output" == "200" ]]
     [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
   done
+
+  run AWS_TRANSPARENT s3 cp s3://$BUCKET/blob_cached_transparent $TMP_BLOB
+  [[ "$status" -eq 0 ]]
+  [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
 }
 
 @test "getting prewarmed blob from memory" {
@@ -29,6 +33,9 @@ load helpers.sh
   run GET "$CACHE/get?bucket=$BUCKET&key=folder/subfolder/blob"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "404" ]]
+
+  run AWS_TRANSPARENT s3 cp s3://$BUCKET/blob_transparent $TMP_BLOB
+  [[ "$status" -eq 1 ]]
 }
 
 # Upload

@@ -17,6 +17,7 @@ POST() { curl -X POST -s -o /dev/null -w '%{http_code}' "$@"; }
 GET() { curl -s -o $TMP_BLOB -w '%{http_code}' "$1"; }
 DELETE() { curl -X DELETE -s -o /dev/null -w '%{http_code}' "$1"; }
 AWS() { aws --endpoint=$AWS_ENDPOINT "$@"; }
+AWS_TRANSPARENT() { aws --endpoint=$CACHE "$@"; }
 
 SHA() { echo $(sha256sum "$1" | awk '{print $1}'); }
 
@@ -51,7 +52,7 @@ try_command aws || {
 run_cachenator() {
   export AWS_REGION="eu-west-2"
   $DIR/../bin/cachenator -port 8080 -metrics-port 9095 -peers $CACHE,$CACHE2,$CACHE3 \
-    -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
+    -s3-endpoint $AWS_ENDPOINT -s3-force-path-style -s3-transparent-api >/dev/null 2>&1 &
   $DIR/../bin/cachenator -port 8081 -metrics-port 9096 -peers $CACHE,$CACHE2,$CACHE3 \
     -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
   $DIR/../bin/cachenator -port 8082 -metrics-port 9097 -peers $CACHE,$CACHE2,$CACHE3 \
@@ -60,9 +61,7 @@ run_cachenator() {
 
 cleanup() {
   echo "Cleaning up cachenator processes"
-  for process in $(pgrep cachenator); do
-    kill "$process"
-  done
+  pgrep cachenator | xargs kill
 
   echo "Cleaning up AWS S3 localstack"
   docker rm -f localstack-s3 >/dev/null 2>&1 || true

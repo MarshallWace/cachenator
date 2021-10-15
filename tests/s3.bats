@@ -19,6 +19,19 @@ load helpers.sh
 
   run AWS s3 ls s3://$BUCKET/blob
   [[ "$status" -eq 0 ]]
+
+  run AWS_TRANSPARENT s3 cp $DIR/blob s3://$BUCKET/blob_transparent
+  [[ "$status" -eq 0 ]]
+
+  # We upload a second blob to check later if its cached when S3 is down
+  run AWS_TRANSPARENT s3 cp $DIR/blob s3://$BUCKET/blob_cached_transparent
+  [[ "$status" -eq 0 ]]
+
+  run AWS_TRANSPARENT s3 ls s3://$BUCKET/blob_transparent
+  [[ "$status" -eq 0 ]]
+
+  run AWS s3 ls s3://$BUCKET/blob_transparent
+  [[ "$status" -eq 0 ]]
 }
 
 @test "uploading blob to test bucket with paths" {
@@ -61,6 +74,10 @@ load helpers.sh
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
   [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
+
+  run AWS_TRANSPARENT s3 cp s3://$BUCKET/blob_cached_transparent $TMP_BLOB
+  [[ "$status" -eq 0 ]]
+  [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
 }
 
 # List
@@ -77,12 +94,15 @@ load helpers.sh
   run GET "$CACHE/list?bucket=$BUCKET"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
-  [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "3" ]]
+  [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "5" ]]
 
   run GET "$CACHE/list?bucket=$BUCKET&prefix=folder"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
   [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "2" ]]
+
+  run AWS_TRANSPARENT s3 ls s3://$BUCKET/
+  [[ "$status" -eq 0 ]]
 }
 
 # Delete
@@ -101,7 +121,13 @@ load helpers.sh
   [[ "$output" == "200" ]]
 
   run AWS s3 ls s3://$BUCKET/folder/subfolder/blob
-  [ "$status" -eq 1 ]
+  [[ "$status" -eq 1 ]]
+
+  run AWS_TRANSPARENT s3 rm s3://$BUCKET/blob_transparent
+  [[ "$status" -eq 0 ]]
+
+  run AWS s3 ls s3://$BUCKET/blob_transparent
+  [[ "$status" -eq 1 ]]
 }
 
 @test "deleting blob prefix from test bucket" {
@@ -109,8 +135,8 @@ load helpers.sh
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
 
-  run AWS s3 ls s3://$BUCKET//folder/subfolder
-  [ "$status" -eq 1 ]
+  run AWS s3 ls s3://$BUCKET/folder/subfolder
+  [[ "$status" -eq 1 ]]
 }
 
 # Prewarm

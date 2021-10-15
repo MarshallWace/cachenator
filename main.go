@@ -12,12 +12,13 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.14.1"
+const version string = "0.15.0"
 
 var (
 	host                   string
@@ -25,6 +26,7 @@ var (
 	maxMultipartMemory     int64
 	peersFlag              string
 	disableHttpMetricsFlag bool
+	s3TransparentAPI       bool
 	verbose                bool
 	versionFlag            bool
 )
@@ -34,6 +36,8 @@ func init() {
 	flag.IntVar(&port, "port", 8080, "Server port")
 	flag.IntVar(&metricsPort, "metrics-port", 9095, "Prometheus metrics port")
 	flag.StringVar(&s3Endpoint, "s3-endpoint", "", "Custom S3 endpoint URL (defaults to AWS)")
+	flag.BoolVar(&s3TransparentAPI, "s3-transparent-api", false,
+		"Enable transparent S3 API for usage from awscli or SDKs (default false)")
 	flag.BoolVar(&s3ForcePathStyle, "s3-force-path-style", false,
 		"Force S3 path bucket addressing (endpoint/bucket/key vs. bucket.endpoint/key) (default false)")
 	flag.Int64Var(&uploadPartSize, "s3-upload-part-size", 5,
@@ -110,17 +114,31 @@ func runServer() {
 	}
 
 	router.MaxMultipartMemory = maxMultipartMemory << 20
-	router.POST("/upload", s3Upload)
-	router.DELETE("/delete", s3Delete)
-	router.GET("/list", s3List)
-	router.GET("/get", cacheGet)
-	router.POST("/prewarm", cachePrewarm)
-	router.POST("/invalidate", cacheInvalidate)
+	router.POST("/upload", restS3Upload)
+	router.DELETE("/delete", restS3Delete)
+	router.GET("/list", restS3List)
+	router.GET("/get", restCacheGet)
+	router.POST("/prewarm", restCachePrewarm)
+	router.POST("/invalidate", restCacheInvalidate)
 	router.GET("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
 	router.DELETE("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
 	router.GET("/healthz", func(c *gin.Context) {
 		c.String(200, fmt.Sprintf("Version: %s", version))
 	})
+
+	if s3TransparentAPI {
+		router.GET("/", transparentS3ListBuckets)
+		router.GET("/:bucket", transparentS3ListObjects)
+		router.HEAD("/:bucket/*key", func(c *gin.Context) {
+			// Dummy headers and 200 response to proceed to GET
+			c.Header("Content-Length", "0")
+			c.Header("Last-Modified", time.Now().Format("Mon, 2 Jan 2006 15:04:05 MST"))
+			c.String(200, "")
+		})
+		router.GET("/:bucket/*key", transparentS3Get)
+		router.PUT("/:bucket/*key", transparentS3Put)
+		router.DELETE("/:bucket/*key", transparentS3Delete)
+	}
 
 	server := &http.Server{
 		Addr:    listenAddr,
