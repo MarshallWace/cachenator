@@ -8,6 +8,7 @@ Features:
 
 - Horizontal scaling and clustering
 - Read-through blob cache with TTL
+- Transparent S3 usage (awscli or SDKs)
 - Batch parallel uploads and deletes
 - Max memory limits with LRU evictions
 - Fast cache keys invalidation
@@ -46,6 +47,8 @@ Usage of /cachenator:
     	Custom S3 endpoint URL (defaults to AWS)
   -s3-force-path-style
     	Force S3 path bucket addressing (endpoint/bucket/key vs. bucket.endpoint/key) (default false)
+  -s3-transparent-api
+    	Enable transparent S3 API for usage from awscli or SDKs (default false)
   -s3-upload-concurrency int
     	Number of goroutines to spin up when uploading blob chunks to S3 (default 10)
   -s3-upload-part-size int
@@ -73,6 +76,8 @@ $ docker run -d --name cache3 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.i
 ```
 
 ## Use
+
+### REST API
 
 ```bash
 ##########
@@ -139,4 +144,25 @@ curl -XDELETE "http://localhost:8080/delete?bucket=bucket1&prefix=folder/blob"
 ###########
 
 curl "http://localhost:9095/metrics"
+```
+
+### Transparent S3 usage (awscli or SDKs)
+
+```bash
+docker run -d --name transparent_cache --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/marshallwace/cachenator --port 8083 -s3-transparent-api
+
+aws --endpoint=http://localhost:8083 s3 cp blob1 s3://bucket1/blob1
+upload: blob1 to s3://bucket1/blob1
+
+aws --endpoint=http://localhost:8083 s3 ls s3://bucket1
+2021-10-15 20:45:13     333516 blob1
+
+aws --endpoint=http://localhost:8083 s3 cp s3://bucket1/blob1 /tmp/blob.png
+download: s3://bucket1/blob1 to /tmp/blob.png
+
+aws --endpoint=http://localhost:8083 s3 rm s3://bucket1/blob1
+delete: s3://bucket1/blob1
+
+aws --endpoint=http://localhost:8083 s3 ls s3://bucket1
+# Empty
 ```
