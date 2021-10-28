@@ -16,6 +16,11 @@ load helpers.sh
   run AWS_TRANSPARENT s3 cp s3://$BUCKET/blob_cached_transparent $TMP_BLOB
   [[ "$status" -eq 0 ]]
   [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
+
+  run GET "$CACHE/get?bucket=$BUCKET&key=cacheonwrite/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+  [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
 }
 
 @test "getting prewarmed blob from memory" {
