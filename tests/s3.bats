@@ -48,6 +48,13 @@ load helpers.sh
 
   run AWS s3 ls s3://$BUCKET/folder/subfolder/blob
   [[ "$status" -eq 0 ]]
+
+  run POST "$CACHE2/upload?bucket=$BUCKET&path=cacheonwrite" -F "files=@$DIR/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+
+  run AWS s3 ls s3://$BUCKET/cacheonwrite/blob
+  [[ "$status" -eq 0 ]]
 }
 
 # Get
@@ -94,7 +101,7 @@ load helpers.sh
   run GET "$CACHE/list?bucket=$BUCKET"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
-  [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "5" ]]
+  [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "6" ]]
 
   run GET "$CACHE/list?bucket=$BUCKET&prefix=folder"
   [[ "$status" -eq 0 ]]

@@ -117,8 +117,15 @@ func restS3Upload(c *gin.Context) {
 			}
 			log.Debugf("Upload to S3 done for '%s#%s'", bucket, fullKey)
 
-			// Invalidate uploaded blob if in-memory
-			go cacheInvalidate(bucket, fullKey)
+			go func() {
+				// Invalidate uploaded blob if in-memory
+				cacheInvalidate(bucket, fullKey)
+
+				if cacheOnWrite {
+					log.Debugf("Cache-on-write enabled, fetching '%s'", constructCacheKey(bucket, fullKey))
+					fetchToCache(bucket, fullKey)
+				}
+			}()
 		})
 	}
 
@@ -160,8 +167,15 @@ func transparentS3Put(c *gin.Context) {
 		return
 	}
 
-	// Invalidate uploaded blob if in-memory
-	go cacheInvalidate(bucket, key)
+	go func() {
+		// Invalidate uploaded blob if in-memory
+		cacheInvalidate(bucket, key)
+
+		if cacheOnWrite {
+			log.Debugf("Cache-on-write enabled, fetching '%s'", constructCacheKey(bucket, key))
+			fetchToCache(bucket, key)
+		}
+	}()
 
 	c.String(200, "")
 }

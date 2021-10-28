@@ -54,7 +54,7 @@ run_cachenator() {
   $DIR/../bin/cachenator -port 8080 -metrics-port 9095 -peers $CACHE,$CACHE2,$CACHE3 \
     -s3-endpoint $AWS_ENDPOINT -s3-force-path-style -s3-transparent-api >/dev/null 2>&1 &
   $DIR/../bin/cachenator -port 8081 -metrics-port 9096 -peers $CACHE,$CACHE2,$CACHE3 \
-    -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
+    -s3-endpoint $AWS_ENDPOINT -s3-force-path-style -cache-on-write >/dev/null 2>&1 &
   $DIR/../bin/cachenator -port 8082 -metrics-port 9097 -peers $CACHE,$CACHE2,$CACHE3 \
     -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
 }

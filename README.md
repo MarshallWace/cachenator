@@ -12,7 +12,8 @@ Features:
 - Batch parallel uploads and deletes
 - Max memory limits with LRU evictions
 - Fast cache keys invalidation
-- Async cache pre-warming with keys prefix
+- Async cache pre-warming (with keys prefix)
+- Cache on write
 - Prometheus metrics
 - Access multiple S3 endpoints (on-prem + AWS) (soon)
 
@@ -25,6 +26,8 @@ Features:
 ```
 $ docker run -it ghcr.io/marshallwace/cachenator --help
 Usage of /cachenator:
+  -cache-on-write
+    	Enable automatic caching on uploads (default false)
   -disable-http-metrics
     	Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)
   -host string

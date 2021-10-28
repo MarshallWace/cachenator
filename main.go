@@ -18,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.15.0"
+const version string = "0.15.1"
 
 var (
 	host                   string
@@ -27,6 +27,7 @@ var (
 	peersFlag              string
 	disableHttpMetricsFlag bool
 	s3TransparentAPI       bool
+	cacheOnWrite           bool
 	verbose                bool
 	versionFlag            bool
 )
@@ -53,6 +54,7 @@ func init() {
 	flag.Int64Var(&maxCacheSize, "max-cache-size", 512,
 		"Max cache size in megabytes. If size goes above, oldest keys will be evicted")
 	flag.IntVar(&ttl, "ttl", 60, "Blob time-to-live in cache in minutes (0 to never expire)")
+	flag.BoolVar(&cacheOnWrite, "cache-on-write", false, "Enable automatic caching on uploads (default false)")
 	flag.IntVar(&timeout, "timeout", 5000, "Get blob timeout in milliseconds")
 	flag.StringVar(&peersFlag, "peers", "",
 		"Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')")

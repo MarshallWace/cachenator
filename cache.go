@@ -130,15 +130,8 @@ func restCachePrewarm(c *gin.Context) {
 			key := key
 			// Prewarm 10 keys at a time
 			getPool.AddJob(func() {
-				cacheKey := constructCacheKey(bucket, key)
-				log.Debugf("Pre-warming cache for '%s'", cacheKey)
-				ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeout))
-				defer cancel()
-
-				var tmpCacheView groupcache.ByteView
-				if err := cacheGroup.Get(ctx, cacheKey, groupcache.ByteViewSink(&tmpCacheView)); err != nil {
-					log.Errorf("Failed to pre-warm cache with key '%s': %v", cacheKey, err)
-				}
+				log.Debugf("Pre-warming cache for '%s'", constructCacheKey(bucket, key))
+				fetchToCache(bucket, key)
 			})
 		}
 	}()
@@ -172,4 +165,16 @@ func cacheInvalidate(bucket string, key string) {
 	cacheKey := constructCacheKey(bucket, key)
 	cacheGroup.Remove(context.Background(), cacheKey)
 	log.Debugf("'%s' invalidated from cache", cacheKey)
+}
+
+func fetchToCache(bucket string, key string) {
+	cacheKey := constructCacheKey(bucket, key)
+	log.Debugf("Fetching key to cache '%s'", cacheKey)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeout))
+	defer cancel()
+
+	var tmpCacheView groupcache.ByteView
+	if err := cacheGroup.Get(ctx, cacheKey, groupcache.ByteViewSink(&tmpCacheView)); err != nil {
+		log.Errorf("Failed to fetch key to cache '%s': %v", cacheKey, err)
+	}
 }
