@@ -32,6 +32,8 @@ Usage of /cachenator:
     	Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)
   -host string
     	Host/IP to identify self in peers list (default "localhost")
+  -log-level string
+    	Logging level (info, debug, error, warn) (default "info")
   -max-cache-size int
     	Max cache size in megabytes. If size goes above, oldest keys will be evicted (default 512)
   -max-multipart-memory int
@@ -60,8 +62,6 @@ Usage of /cachenator:
     	Get blob timeout in milliseconds (default 5000)
   -ttl int
     	Blob time-to-live in cache in minutes (0 to never expire) (default 60)
-  -verbose
-    	Verbose logs
   -version
     	Version
 
