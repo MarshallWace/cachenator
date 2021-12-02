@@ -18,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.15.1"
+const version string = "0.16.0"
 
 var (
 	host                   string
@@ -28,7 +28,7 @@ var (
 	disableHttpMetricsFlag bool
 	s3TransparentAPI       bool
 	cacheOnWrite           bool
-	verbose                bool
+	logLevel               string
 	versionFlag            bool
 )
 
@@ -60,7 +60,7 @@ func init() {
 		"Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')")
 	flag.BoolVar(&disableHttpMetricsFlag, "disable-http-metrics", false,
 		"Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)")
-	flag.BoolVar(&verbose, "verbose", false, "Verbose logs")
+	flag.StringVar(&logLevel, "log-level", "info", "Logging level (info, debug, error, warn)")
 	flag.BoolVar(&versionFlag, "version", false, "Version")
 	flag.Parse()
 }
@@ -75,10 +75,17 @@ func main() {
 }
 
 func checkFlags() {
-	if verbose {
-		log.SetLevel(log.DebugLevel)
-	} else {
+	switch logLevel {
+	case "info":
 		log.SetLevel(log.InfoLevel)
+	case "debug":
+		log.SetLevel(log.DebugLevel)
+	case "error":
+		log.SetLevel(log.ErrorLevel)
+	case "warn":
+		log.SetLevel(log.WarnLevel)
+	default:
+		log.Fatalf("Unsupported log-level value: %s. Use info, debug, error or warn", logLevel)
 	}
 
 	if versionFlag {
@@ -99,6 +106,11 @@ func runServer() {
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	router := gin.Default()
+	if logLevel == "error" || logLevel == "warn" {
+		// Remove default gin logger
+		router = gin.New()
+		router.Use(gin.Recovery())
+	}
 
 	listenAddr := fmt.Sprintf("127.0.0.1:%d", port)
 	if os.Getenv("GIN_MODE") == "release" {
