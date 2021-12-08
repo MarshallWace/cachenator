@@ -7,6 +7,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,6 +32,7 @@ var (
 	cacheOnWrite           bool
 	logLevel               string
 	versionFlag            bool
+	jwtRsaPubKeyFlag       string
 )
 
 func init() {
@@ -37,6 +40,7 @@ func init() {
 	flag.IntVar(&port, "port", 8080, "Server port")
 	flag.IntVar(&metricsPort, "metrics-port", 9095, "Prometheus metrics port")
 	flag.StringVar(&s3Endpoint, "s3-endpoint", "", "Custom S3 endpoint URL (defaults to AWS)")
+	flag.StringVar(&jwtRsaPubKeyFlag, "jwt-rsa-publickey-path", "", "Path to JWT RSA public key file")
 	flag.BoolVar(&s3TransparentAPI, "s3-transparent-api", false,
 		"Enable transparent S3 API for usage from awscli or SDKs (default false)")
 	flag.BoolVar(&s3ForcePathStyle, "s3-force-path-style", false,
@@ -98,6 +102,18 @@ func checkFlags() {
 		peers = strings.Split(peersFlag, ",")
 		peers = cleanupPeers(peers)
 	}
+
+	if jwtRsaPubKeyFlag != "" {
+		content, err := ioutil.ReadFile(jwtRsaPubKeyFlag)
+		if err != nil {
+			log.Fatalf("jwt-rsa-publickey-path invalid: %v.", err)
+		}
+
+		jwtRsaPubKey, err = jwt.ParseRSAPublicKeyFromPEM(content)
+		if err != nil {
+			log.Fatalf("jwt-rsa-publickey-path unparsable: %v.", err)
+		}
+	}
 }
 
 func runServer() {
@@ -127,6 +143,10 @@ func runServer() {
 		router.Use(httpMetricsMiddleware())
 	}
 
+	if jwtRsaPubKeyFlag != "" {
+		router.Use(jwtMiddleware())
+	}
+
 	router.MaxMultipartMemory = maxMultipartMemory << 20
 	router.POST("/upload", restS3Upload)
 	router.DELETE("/delete", restS3Delete)
@@ -136,6 +156,7 @@ func runServer() {
 	router.POST("/invalidate", restCacheInvalidate)
 	router.GET("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
 	router.DELETE("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
+
 	router.GET("/healthz", func(c *gin.Context) {
 		c.String(200, fmt.Sprintf("Version: %s", version))
 	})
