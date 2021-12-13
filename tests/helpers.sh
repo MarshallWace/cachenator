@@ -14,7 +14,7 @@ CACHE3_METRICS="http://localhost:9097"
 AWS_ENDPOINT="http://localhost:4566"
 
 POST() { curl -X POST -s -o /dev/null -w '%{http_code}' "$@"; }
-GET() { curl -s -o $TMP_BLOB -w '%{http_code}' "$1"; }
+GET() { curl -s -o $TMP_BLOB -w '%{http_code}' "$@"; }
 DELETE() { curl -X DELETE -s -o /dev/null -w '%{http_code}' "$1"; }
 AWS() { aws --endpoint=$AWS_ENDPOINT "$@"; }
 AWS_TRANSPARENT() { aws --endpoint=$CACHE "$@"; }
@@ -60,9 +60,7 @@ run_cachenator() {
 }
 
 run_cachenator_jwt() {
-  export AWS_REGION="eu-west-2"
-  $DIR/../bin/cachenator -port 8080 -jwt-rsa-publickey-path $DIR/pubkey.crt \
-    -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
+  $DIR/../bin/cachenator -port 8080 -jwt-rsa-publickey-path $DIR/pubkey.crt >/dev/null 2>&1 &
 }
 
 cleanup() {

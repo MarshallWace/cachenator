@@ -21,6 +21,7 @@ aws --endpoint=$AWS_ENDPOINT s3api create-bucket --bucket $BUCKET
 
 echo -e "\nRunning cachenator cluster"
 run_cachenator
+sleep 1
 
 echo -e "\nRunning S3 tests"
 bats $DIR/s3.bats
@@ -31,11 +32,12 @@ docker rm -f localstack-s3 >/dev/null 2>&1
 echo -e "\nRunning memory tests"
 bats $DIR/memory.bats
 
-echo -e "\nStopping current cachenator cluster"
+echo -e "Stopping current cachenator cluster"
 pgrep cachenator | xargs kill
 
 echo -e "\nRunning authenticated (JWT) cachenator instance"
 run_cachenator_jwt
+sleep 1
 
 echo -e "\nRunning JWT tests"
 bats $DIR/jwt.bats
