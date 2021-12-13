@@ -20,7 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.16.0"
+const version string = "0.17.0"
 
 var (
 	host                   string
@@ -40,7 +40,6 @@ func init() {
 	flag.IntVar(&port, "port", 8080, "Server port")
 	flag.IntVar(&metricsPort, "metrics-port", 9095, "Prometheus metrics port")
 	flag.StringVar(&s3Endpoint, "s3-endpoint", "", "Custom S3 endpoint URL (defaults to AWS)")
-	flag.StringVar(&jwtRsaPubKeyFlag, "jwt-rsa-publickey-path", "", "Path to JWT RSA public key file")
 	flag.BoolVar(&s3TransparentAPI, "s3-transparent-api", false,
 		"Enable transparent S3 API for usage from awscli or SDKs (default false)")
 	flag.BoolVar(&s3ForcePathStyle, "s3-force-path-style", false,
@@ -64,6 +63,7 @@ func init() {
 		"Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')")
 	flag.BoolVar(&disableHttpMetricsFlag, "disable-http-metrics", false,
 		"Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)")
+	flag.StringVar(&jwtRsaPubKeyFlag, "jwt-rsa-publickey-path", "", "Path to JWT RSA public key file")
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (info, debug, error, warn)")
 	flag.BoolVar(&versionFlag, "version", false, "Version")
 	flag.Parse()

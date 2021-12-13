@@ -31,4 +31,13 @@ docker rm -f localstack-s3 >/dev/null 2>&1
 echo -e "\nRunning memory tests"
 bats $DIR/memory.bats
 
+echo -e "\nStopping current cachenator cluster"
+pgrep cachenator | xargs kill
+
+echo -e "\nRunning authenticated (JWT) cachenator instance"
+run_cachenator_jwt
+
+echo -e "\nRunning JWT tests"
+bats $DIR/jwt.bats
+
 cleanup

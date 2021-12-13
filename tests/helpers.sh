@@ -59,6 +59,12 @@ run_cachenator() {
     -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
 }
 
+run_cachenator_jwt() {
+  export AWS_REGION="eu-west-2"
+  $DIR/../bin/cachenator -port 8080 -jwt-rsa-publickey-path $DIR/pubkey.crt \
+    -s3-endpoint $AWS_ENDPOINT -s3-force-path-style >/dev/null 2>&1 &
+}
+
 cleanup() {
   echo "Cleaning up cachenator processes"
   pgrep cachenator | xargs kill
