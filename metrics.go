@@ -20,6 +20,7 @@ import (
 var (
 	metricsPort                       int
 	httpRequestsMetric                *prometheus.CounterVec
+	jwtRequestsMetric                 *prometheus.CounterVec
 	httpRequestsLatencyMetric         *prometheus.GaugeVec
 	groupGetsMetric                   prometheus.Gauge
 	groupCacheHitsMetric              prometheus.Gauge
@@ -43,6 +44,10 @@ func initMetrics() {
 		Name: "cachenator_http_requests_total",
 		Help: "Total number of HTTP requests",
 	}, []string{"method", "path", "status"})
+	jwtRequestsMetric = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "cachenator_jwt_requests_total",
+		Help: "Total number of JWT-authenticated HTTP requests",
+	}, []string{"success", "error"})
 	httpRequestsLatencyMetric = promauto.NewGaugeVec(prometheus.GaugeOpts{
 		Name: "cachenator_http_requests_latency",
 		Help: "HTTP requests latency",

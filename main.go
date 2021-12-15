@@ -7,6 +7,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,10 +16,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.16.0"
+const version string = "0.17.0"
 
 var (
 	host                   string
@@ -30,6 +32,7 @@ var (
 	cacheOnWrite           bool
 	logLevel               string
 	versionFlag            bool
+	jwtRsaPubKeyFlag       string
 )
 
 func init() {
@@ -60,6 +63,7 @@ func init() {
 		"Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')")
 	flag.BoolVar(&disableHttpMetricsFlag, "disable-http-metrics", false,
 		"Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)")
+	flag.StringVar(&jwtRsaPubKeyFlag, "jwt-rsa-publickey-path", "", "Path to JWT RSA public key file")
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (info, debug, error, warn)")
 	flag.BoolVar(&versionFlag, "version", false, "Version")
 	flag.Parse()
@@ -98,6 +102,18 @@ func checkFlags() {
 		peers = strings.Split(peersFlag, ",")
 		peers = cleanupPeers(peers)
 	}
+
+	if jwtRsaPubKeyFlag != "" {
+		content, err := ioutil.ReadFile(jwtRsaPubKeyFlag)
+		if err != nil {
+			log.Fatalf("jwt-rsa-publickey-path invalid: %v.", err)
+		}
+
+		jwtRsaPubKey, err = jwt.ParseRSAPublicKeyFromPEM(content)
+		if err != nil {
+			log.Fatalf("jwt-rsa-publickey-path unparsable: %v.", err)
+		}
+	}
 }
 
 func runServer() {
@@ -127,6 +143,10 @@ func runServer() {
 		router.Use(httpMetricsMiddleware())
 	}
 
+	if jwtRsaPubKeyFlag != "" {
+		router.Use(jwtMiddleware())
+	}
+
 	router.MaxMultipartMemory = maxMultipartMemory << 20
 	router.POST("/upload", restS3Upload)
 	router.DELETE("/delete", restS3Delete)
@@ -136,6 +156,7 @@ func runServer() {
 	router.POST("/invalidate", restCacheInvalidate)
 	router.GET("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
 	router.DELETE("/_groupcache/s3/*blob", gin.WrapF(cachePool.ServeHTTP))
+
 	router.GET("/healthz", func(c *gin.Context) {
 		c.String(200, fmt.Sprintf("Version: %s", version))
 	})
