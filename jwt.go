@@ -10,7 +10,9 @@ import (
 )
 
 var (
-	jwtRsaPubKey *rsa.PublicKey
+	jwtRsaPubKey    *rsa.PublicKey
+	jwtIssuerFlag   string
+	jwtAudienceFlag string
 )
 
 type JwtClaims struct {
@@ -75,7 +77,22 @@ func jwtMiddleware() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(*JwtClaims); ok && token.Valid {
-			// TODO: Add JWT standard claims Issuer+Audience validation
+			if jwtIssuerFlag != "" && strings.TrimSpace(claims.StandardClaims.Issuer) != jwtIssuerFlag {
+				log.Debugf("JWT token issuer claim doesn't match provided -jwt-issuer value")
+				jwtRequestsMetric.WithLabelValues("false", "JWT token issuer claim does not match").Inc()
+				c.JSON(401, gin.H{"error": "JWT token issuer is not valid"})
+				c.Abort()
+				return
+			}
+
+			if jwtAudienceFlag != "" && strings.TrimSpace(claims.StandardClaims.Audience) != jwtAudienceFlag {
+				log.Debugf("JWT token audience claim doesn't match provided -jwt-audience value")
+				jwtRequestsMetric.WithLabelValues("false", "JWT token audience claim does not match").Inc()
+				c.JSON(401, gin.H{"error": "JWT token audience is not valid"})
+				c.Abort()
+				return
+			}
+
 			if !validActionForHttpMethod(claims.Action, c.Request.Method) {
 				log.Debugf("Got valid JWT token, but action allow doesn't match request (action %s != method %s)", claims.Action, c.Request.Method)
 				jwtRequestsMetric.WithLabelValues("false", "JWT action does not match method").Inc()
@@ -83,6 +100,7 @@ func jwtMiddleware() gin.HandlerFunc {
 				c.Abort()
 				return
 			}
+
 			log.Debugf("Got valid JWT token, exiting JWT middleware")
 			jwtRequestsMetric.WithLabelValues("true", "").Inc()
 		} else {

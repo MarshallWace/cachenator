@@ -60,7 +60,8 @@ run_cachenator() {
 }
 
 run_cachenator_jwt() {
-  $DIR/../bin/cachenator -port 8080 -jwt-rsa-publickey-path $DIR/pubkey.crt >/dev/null 2>&1 &
+  $DIR/../bin/cachenator -port 8080 -jwt-rsa-publickey-path $DIR/pubkey.crt \
+    -jwt-issuer "auth-provider" -jwt-audience "cachenator" >/dev/null 2>&1 &
 }
 
 cleanup() {

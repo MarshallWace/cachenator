@@ -170,3 +170,42 @@ delete: s3://bucket1/blob1
 aws --endpoint=http://localhost:8083 s3 ls s3://bucket1
 # Empty
 ```
+
+### JWT auth
+
+This feature will enable authentication on all endpoints (except /healthz) and is helpful for clients that require temporary access to S3 or can't get dedicated S3 creds. This is also helpful for simulating the [AWS signed URLs](https://docs.aws.amazon.com/AmazonS3/latest/userguide/ShareObjectPreSignedURL.html) functionality for custom S3 providers like [Pure Flashblade](https://www.purestorage.com/uk/products/file-and-object/flashblade.html).
+
+An example use case looks like:
+- client requires read access to an S3 blob
+- client authenticates with an oauth2/kerberos/custom auth provider
+- auth provider issues a temporary RS256 JWT token with a payload like:
+  ```
+  {
+    "exp": <unix timestamp now+5min>,
+    "iss": "<auth provider>",
+    "aud": "cachenator,
+    "action": "READ"
+  }
+  ```
+- client passes JWT token to cachenator endpoint in the Authorization header
+- cachenator validates JWT token, action, issuer and audience and responds with blob
+
+#### JWT usage
+
+To enable JWT auth on all endpoints, pass in the `-jwt-rsa-publickey-path` flag. The JWT token issuer will need to have the equivalent RSA private key to sign the tokens, cachenator just needs the public key to validate the signature.
+
+```bash
+docker run -d --network host -v $HOME/.aws/:/root/.aws:ro -v $(pwd):/certs \
+  ghcr.io/marshallwace/cachenator -jwt-rsa-publickey-path /certs/publickey.crt
+
+curl "http://localhost:8080/get?bucket=test&key=blob" \
+  -H "Authorization: Bearer <JWT token>" > blob
+```
+
+To also validate standard claims like issuer and audience:
+
+```bash
+docker run -d --network host -v $HOME/.aws/:/root/.aws:ro -v $(pwd):/certs \
+  ghcr.io/marshallwace/cachenator -jwt-rsa-publickey-path /certs/publickey.crt \
+  -jwt-issuer <auth provider> -jwt-audience cachenator
+```

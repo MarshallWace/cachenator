@@ -20,7 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.17.0"
+const version string = "0.17.1"
 
 var (
 	host                   string
@@ -64,6 +64,8 @@ func init() {
 	flag.BoolVar(&disableHttpMetricsFlag, "disable-http-metrics", false,
 		"Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)")
 	flag.StringVar(&jwtRsaPubKeyFlag, "jwt-rsa-publickey-path", "", "Path to JWT RSA public key file")
+	flag.StringVar(&jwtIssuerFlag, "jwt-issuer", "", "JWT issuer claim")
+	flag.StringVar(&jwtAudienceFlag, "jwt-audience", "", "JWT audience claim")
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (info, debug, error, warn)")
 	flag.BoolVar(&versionFlag, "version", false, "Version")
 	flag.Parse()
