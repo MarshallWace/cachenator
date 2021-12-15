@@ -77,7 +77,7 @@ func jwtMiddleware() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(*JwtClaims); ok && token.Valid {
-			if jwtIssuerFlag != "" && claims.StandardClaims.Issuer != jwtIssuerFlag {
+			if jwtIssuerFlag != "" && strings.TrimSpace(claims.StandardClaims.Issuer) != jwtIssuerFlag {
 				log.Debugf("JWT token issuer claim doesn't match provided -jwt-issuer value")
 				jwtRequestsMetric.WithLabelValues("false", "JWT token issuer claim does not match").Inc()
 				c.JSON(401, gin.H{"error": "JWT token issuer is not valid"})
@@ -85,7 +85,7 @@ func jwtMiddleware() gin.HandlerFunc {
 				return
 			}
 
-			if jwtAudienceFlag != "" && claims.StandardClaims.Audience != jwtAudienceFlag {
+			if jwtAudienceFlag != "" && strings.TrimSpace(claims.StandardClaims.Audience) != jwtAudienceFlag {
 				log.Debugf("JWT token audience claim doesn't match provided -jwt-audience value")
 				jwtRequestsMetric.WithLabelValues("false", "JWT token audience claim does not match").Inc()
 				c.JSON(401, gin.H{"error": "JWT token audience is not valid"})
