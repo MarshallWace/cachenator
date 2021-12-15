@@ -7,6 +7,8 @@ load helpers.sh
 # Payload:
 # {
 #   "exp": from https://www.unixtimestamp.com/,
+#   "aud": "cachenator",
+#   "iss": "auth-provider",
 #   "action": "READ"
 # }
 # RSA keys used: tests/privkey.pem and tests/pubkey.crt
@@ -19,21 +21,35 @@ load helpers.sh
 
 @test "JWT expired" {
   run GET "$CACHE/get" \
-    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDc4NzIyMDYsImFjdGlvbiI6IlJFQUQifQ.aNeWCA7yMdqEoeSFEb8rRAjntz1rMvBqvaRYPEvs_KwWohr_unj-EceMkX0_31otWdN2UtmH9mnPavebTah2B3xemtZpd5RviKu-NL_NXop5rTzOUYUI3pRHviok6bxYwx-nDt23p2w0VpfUiHtfLmvWa0XKvoONq7g6Iq4Y1P33JvVV2XgdYbKhLOlPPsuWdTFADXPLb8yPYzm0Blyz2LLw0pKlmLccx4h0sw24CweuKAz7r7HCoQc14vka3XmEtDwmkuTqoXJT9zJ8-DOSjVWMZERz827msHwwYF46Ge2KrSNa3qtdTSUCKdW_KpGo9SFJCrPRfJ4Fh5h7kqBmFQ"
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDgwNDEwNjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCJ9.weH0WM237Y1hJfrCiT0R0OBfpLfyhVxmOz_vgKobXtq6JMOMLNbS08szuLC9hJtTcLPKZ7kXOQ5OGg9U5qXVk2audqGcbYB71FRqrjKwqjLQ_cJIFeh2CsluYrw2iL04z2DUm8gUJphiErQok9H6QbaTzxVbAAwFt1aFud9tMxOK8XY4CnSqYKzHZhJtjgaJhJFVQTuLAfU4tm0652PPrW8eHK2-pqymvuzJFLgr_7EBeaMpX5Ir1UruARw5Y79IeTsyJ5TXUQc5jMCKNu2zA41usn72DNRbihlkUJr1I4cp_Zj0bV9oRAv25ST7g_13SBbz5MHgonbiiFxy_rl4Rg"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "401" ]]
 }
 
 @test "JWT malformed segments" {
   run GET "$CACHE/get" \
-    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2MDc4NzIyMDYsImFjdGlvbiI6IlJFQUQifQ"
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCJ9"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "401" ]]
 }
 
 @test "JWT bad signature" {
   run GET "$CACHE/get" \
-    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzIzOTM4MDYsImFjdGlvbiI6IlJFQUQifQ.asdf"
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCJ9.asdf"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "401" ]]
+}
+
+@test "JWT bad issuer" {
+  run GET "$CACHE/get" \
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhc2RmIiwiYWN0aW9uIjoiUkVBRCJ9.B0x2OF-Rvu6WpAlGxB4rTJo1CnDN1Hw3gyMah8_ICqWazFnODBxVuENHp7Ky7JSFiMLdb3rYO5R_EdjkFp8totx-PFFwDcIqE0xJ1jJZQ2_GA2ghKg94-KWtcrToSiq3OZcmb0Tr7vtJZvTS92mwH5YQKUDccKOjp8r_cGOMRpZ7jV4o7VlJBtwxVPbFux_oGW7n44eJ0N4AdYQpAkARGfIuyH-UTusreLsfr-xOKSUc6UZ9ZJNGPGX8wj8XRMAn834SnGD-3cwzEEfxMwmK_H8BrMf0Aqj8GAx-ohM8M1T30-Z1uDdurEjGPD7nKKpQzbmS5qrlB4qH5zt8t7EFnA"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "401" ]]
+}
+
+@test "JWT bad audience" {
+  run GET "$CACHE/get" \
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImFzZGYiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCJ9.twGDU2LvwV-WXZusOrRO6ZqPNvDE9xvblW-qxMG3RZtxmkPALJhipiIGrSlnGgNrjZ_tlKmYl2bWSSC7r4qGITSBzEAmhaljUZQkXBDSnMZwMrppzjal5JkVLaelnQA9sqoKMLcAfdW5L7jrK4BMXQOjSmwF4bKtDOczKbP2WvM6QbWR_mpuNGPnb4xr625f3DoYEiUaA8vknMyUfqufPfpmieQPXFTaUIzPuMOYNUqDvJWR8697LNmWpHUL0oUA4Yvs863VWvqBda4rV2k5VShffARt3j1N6eqV_JRKrDG0uCDREY56E2YJlaneJiaSqXRlFl_HcO5NkWfHh4yJXw"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "401" ]]
 }
@@ -41,14 +57,14 @@ load helpers.sh
 @test "JWT action not allowed" {
   # POST when only action allowed is READ
   run POST "$CACHE/upload" \
-    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzIzOTM4MDYsImFjdGlvbiI6IlJFQUQifQ.J37qq96xRwYZD4Qg01_Xm999PRhNcmvxYc4gZEoPjxZxQTZh4AwG6x3KIdo01wWGbkKj0YR2QB-UR7IvPPeC9vomWFPB-No2G0sDY8EYMEt5ZgJbpJg6uzQJO1SMGaYCFc57TbP1KVOtSoavf4NLYzT4n3XgiDV-wZn4XSXtHBlbiuxXkmbVWRjOlRUdEmKIHyyYwkXHL7hiDGJRPNLSn4wBnFyrVrviKgxcauuM6pJ9SXFLc-yd9HKrwig_9K4ZthIeldXd9aRjcv37IuIGqzvWR4KBew9XGbg2ZXMMKbzr1rba1fWlrRlxU3KsRPL5kmnYhJOG3et_m37Wcm9agg"
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCJ9.1SYAXUq0zYwT8DzzfMr-0oE4LO_gCX9kFXb4Ew-95mbujMPgjBnlhqwv8DZdrps72MDQaXbLakCGvZ_HNC55LMV_gG3Q3Nyg4PRV9BP6_6tZPgRbjPOFdq0HpCSWD1w2NjidqbfW4vuB5WAs0Mf1J9g6r-Dzvijjn81YcQznqWb43YocCxWoNWgTyyZwPXTWpmJdgrt9kfcDzB-Z71ezKt6jstUhk_ie7rjfh1viECyfeDkH7OF0qOovGyF7z09ZFrXLJXGQon8phSO4d5J_x8lyLpKagkxInGFhIs2q_aAl_DcKxS1G53HonMZ0DGNj6mZniQVHK5AdJ0QJt7eDYQ"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "401" ]]
 }
 
 @test "JWT correct" {
   run GET "$CACHE/get?bucket=test&key=asdf" \
-    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzIzOTM4MDYsImFjdGlvbiI6IlJFQUQifQ.J37qq96xRwYZD4Qg01_Xm999PRhNcmvxYc4gZEoPjxZxQTZh4AwG6x3KIdo01wWGbkKj0YR2QB-UR7IvPPeC9vomWFPB-No2G0sDY8EYMEt5ZgJbpJg6uzQJO1SMGaYCFc57TbP1KVOtSoavf4NLYzT4n3XgiDV-wZn4XSXtHBlbiuxXkmbVWRjOlRUdEmKIHyyYwkXHL7hiDGJRPNLSn4wBnFyrVrviKgxcauuM6pJ9SXFLc-yd9HKrwig_9K4ZthIeldXd9aRjcv37IuIGqzvWR4KBew9XGbg2ZXMMKbzr1rba1fWlrRlxU3KsRPL5kmnYhJOG3et_m37Wcm9agg"
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCJ9.1SYAXUq0zYwT8DzzfMr-0oE4LO_gCX9kFXb4Ew-95mbujMPgjBnlhqwv8DZdrps72MDQaXbLakCGvZ_HNC55LMV_gG3Q3Nyg4PRV9BP6_6tZPgRbjPOFdq0HpCSWD1w2NjidqbfW4vuB5WAs0Mf1J9g6r-Dzvijjn81YcQznqWb43YocCxWoNWgTyyZwPXTWpmJdgrt9kfcDzB-Z71ezKt6jstUhk_ie7rjfh1viECyfeDkH7OF0qOovGyF7z09ZFrXLJXGQon8phSO4d5J_x8lyLpKagkxInGFhIs2q_aAl_DcKxS1G53HonMZ0DGNj6mZniQVHK5AdJ0QJt7eDYQ"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "404" ]]
 }
