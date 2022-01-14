@@ -78,22 +78,6 @@ func jwtMiddleware() gin.HandlerFunc {
 
 		if claims, ok := token.Claims.(*JwtClaims); ok && token.Valid {
 
-			if !strings.HasPrefix(c.Query("key"), strings.TrimSpace(claims.Prefix)) {
-				log.Debugf("JWT token prefix does not match URL object (prefix %s != object %s)", claims.Prefix, strings.TrimSpace(c.Query("key")))
-				jwtRequestsMetric.WithLabelValues("false", "JWT token prefix does not match URL object").Inc()
-				c.JSON(401, gin.H{"error": "JWT token prefix does not match URL object"})
-				c.Abort()
-				return
-			}
-
-			if strings.TrimSpace(claims.Bucket) != "" && strings.TrimSpace(claims.Bucket) != c.Query("bucket") {
-				log.Debugf("JWT token bucket does not match URL bucket (jwt bucket %s != URL bucket %s", claims.Bucket, strings.TrimSpace(c.Query("bucket")))
-				jwtRequestsMetric.WithLabelValues("false", "JWT token bucket does not match URL bucket").Inc()
-				c.JSON(401, gin.H{"error": "JWT token bucket does not match URL bucket"})
-				c.Abort()
-				return
-			}
-
 			if jwtIssuerFlag != "" && strings.TrimSpace(claims.StandardClaims.Issuer) != jwtIssuerFlag {
 				log.Debugf("JWT token issuer claim doesn't match provided -jwt-issuer value")
 				jwtRequestsMetric.WithLabelValues("false", "JWT token issuer claim does not match").Inc()
@@ -114,6 +98,24 @@ func jwtMiddleware() gin.HandlerFunc {
 				log.Debugf("Got valid JWT token, but action allow doesn't match request (action %s != method %s)", claims.Action, c.Request.Method)
 				jwtRequestsMetric.WithLabelValues("false", "JWT action does not match method").Inc()
 				c.JSON(401, gin.H{"error": "JWT token action allow doesn't match request method"})
+				c.Abort()
+				return
+			}
+
+			// TODO: Extract key/bucket from c.Param as well depending on type of request
+			// TODO: Validate key for methods where it makes sense, not all
+			if !strings.HasPrefix(c.Query("key"), strings.TrimSpace(claims.Prefix)) {
+				log.Debugf("JWT token prefix does not match URL object (prefix %s != object %s)", claims.Prefix, strings.TrimSpace(c.Query("key")))
+				jwtRequestsMetric.WithLabelValues("false", "JWT token prefix does not match URL object").Inc()
+				c.JSON(401, gin.H{"error": "JWT token prefix does not match URL object"})
+				c.Abort()
+				return
+			}
+
+			if strings.TrimSpace(claims.Bucket) != "" && strings.TrimSpace(claims.Bucket) != c.Query("bucket") {
+				log.Debugf("JWT token bucket does not match URL bucket (jwt bucket %s != URL bucket %s", claims.Bucket, strings.TrimSpace(c.Query("bucket")))
+				jwtRequestsMetric.WithLabelValues("false", "JWT token bucket does not match URL bucket").Inc()
+				c.JSON(401, gin.H{"error": "JWT token bucket does not match URL bucket"})
 				c.Abort()
 				return
 			}
