@@ -119,29 +119,21 @@ func jwtMiddleware() gin.HandlerFunc {
 				keyParam = getRequestParam(c, "prefix")
 			}
 
-if keyParam == "" {
-	keyParam = getRequestParam(c, "path")
-}
+			// Compare request bucket and key params with JWT bucket and key params
+			if keyParam != "" && strings.TrimSpace(claims.Prefix) != "" && !strings.HasPrefix(keyParam, strings.TrimSpace(claims.Prefix)) {
+				log.Debugf("JWT token prefix does not match URL object (prefix %s != object %s)", claims.Prefix, strings.TrimSpace(keyParam))
+				jwtRequestsMetric.WithLabelValues("false", "JWT token prefix does not match URL object").Inc()
+				c.JSON(401, gin.H{"error": "JWT token prefix does not match URL object"})
+				c.Abort()
+				return
+			}
 
-			// Validate JWT bucket and key for all calls except ListBuckets (GET on "/" without bucket or key defined)
-			if (c.Request.Method != "GET" && c.Request.Method != "HEAD") || bucketParam != "" || keyParam != "" {
-
-				// Compare request bucket and key params with JWT bucket and key params
-				if !strings.HasPrefix(keyParam, strings.TrimSpace(claims.Prefix)) {
-					log.Debugf("JWT token prefix does not match URL object (prefix %s != object %s)", claims.Prefix, strings.TrimSpace(keyParam))
-					jwtRequestsMetric.WithLabelValues("false", "JWT token prefix does not match URL object").Inc()
-					c.JSON(401, gin.H{"error": "JWT token prefix does not match URL object"})
-					c.Abort()
-					return
-				}
-
-				if strings.TrimSpace(claims.Bucket) != "" && strings.TrimSpace(claims.Bucket) != bucketParam {
-					log.Debugf("JWT token bucket does not match URL bucket (jwt bucket %s != URL bucket %s", claims.Bucket, strings.TrimSpace(bucketParam))
-					jwtRequestsMetric.WithLabelValues("false", "JWT token bucket does not match URL bucket").Inc()
-					c.JSON(401, gin.H{"error": "JWT token bucket does not match URL bucket"})
-					c.Abort()
-					return
-				}
+			if bucketParam != "" && strings.TrimSpace(claims.Bucket) != "" && strings.TrimSpace(claims.Bucket) != bucketParam {
+				log.Debugf("JWT token bucket does not match URL bucket (jwt bucket %s != URL bucket %s", claims.Bucket, strings.TrimSpace(bucketParam))
+				jwtRequestsMetric.WithLabelValues("false", "JWT token bucket does not match URL bucket").Inc()
+				c.JSON(401, gin.H{"error": "JWT token bucket does not match URL bucket"})
+				c.Abort()
+				return
 			}
 
 			log.Debugf("Got valid JWT token, exiting JWT middleware")
