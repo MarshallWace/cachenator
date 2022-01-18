@@ -119,6 +119,10 @@ func jwtMiddleware() gin.HandlerFunc {
 				keyParam = getRequestParam(c, "prefix")
 			}
 
+if keyParam == "" {
+	keyParam = getRequestParam(c, "path")
+}
+
 			// Validate JWT bucket and key for all calls except ListBuckets (GET on "/" without bucket or key defined)
 			if (c.Request.Method != "GET" && c.Request.Method != "HEAD") || bucketParam != "" || keyParam != "" {
 
