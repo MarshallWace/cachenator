@@ -119,6 +119,10 @@ func jwtMiddleware() gin.HandlerFunc {
 				keyParam = getRequestParam(c, "prefix")
 			}
 
+			if keyParam == "" {
+				keyParam = getRequestParam(c, "path")
+			}
+
 			// Compare request bucket and key params with JWT bucket and key params
 			if keyParam != "" && strings.TrimSpace(claims.Prefix) != "" && !strings.HasPrefix(keyParam, strings.TrimSpace(claims.Prefix)) {
 				log.Debugf("JWT token prefix does not match URL object (prefix %s != object %s)", claims.Prefix, strings.TrimSpace(keyParam))
