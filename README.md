@@ -182,13 +182,15 @@ An example use case looks like:
   ```
   {
     "exp": <unix timestamp now+5min>,
-    "iss": "<auth provider>",
-    "aud": "cachenator,
-    "action": "READ"
+    "iss": "<auth provider>", # optional
+    "aud": "cachenator,       # optional
+    "action": "READ",
+    "bucket": "mybucket",     # required, or set to "" to allow all
+    "prefix": "myobject",     # required, or set to "" to allow all
   }
   ```
 - client passes JWT token to cachenator endpoint in the Authorization header
-- cachenator validates JWT token, action, issuer and audience and responds with blob
+- cachenator validates JWT token, action, issuer, audience, bucket and prefix and responds with blob
 
 #### JWT usage
 

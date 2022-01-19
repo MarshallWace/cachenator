@@ -64,7 +64,21 @@ load helpers.sh
 
 @test "JWT correct" {
   run GET "$CACHE/get?bucket=test&key=asdf" \
-    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCJ9.1SYAXUq0zYwT8DzzfMr-0oE4LO_gCX9kFXb4Ew-95mbujMPgjBnlhqwv8DZdrps72MDQaXbLakCGvZ_HNC55LMV_gG3Q3Nyg4PRV9BP6_6tZPgRbjPOFdq0HpCSWD1w2NjidqbfW4vuB5WAs0Mf1J9g6r-Dzvijjn81YcQznqWb43YocCxWoNWgTyyZwPXTWpmJdgrt9kfcDzB-Z71ezKt6jstUhk_ie7rjfh1viECyfeDkH7OF0qOovGyF7z09ZFrXLJXGQon8phSO4d5J_x8lyLpKagkxInGFhIs2q_aAl_DcKxS1G53HonMZ0DGNj6mZniQVHK5AdJ0QJt7eDYQ"
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCIsImJ1Y2tldCI6InRlc3QiLCJwcmVmaXgiOiJhc2RmIn0.pzAVlCDgZ4BmYZppcjaaKftoV5j0Fm5OhmUcbAJ4oGvlKeq1D4Pgm9xkB0afiBWfOmNLV5S5Ib8bVz0qiIholAeyTtQzNWc5pPe8H20_KMMAzuM-si3G_NdTFsWH-xR_WXBAlYaRR96NruT2mPe333LkEsbhnJHBP8uXQikRK7t4WBrafv7OEnoOYa2DUQpNoqqTmKj9t4SS9zUySV6dD9xUUYo2JOZZ8JdemXPe8C1OFJz__ibxcmpCWMhIJQYFEexa2aKvQEtD2zLXusOmLiN2dTKU9q_yky1hncb5yaVrQUaHulusl_u0CPazi7XOkO8MpLDOw8ounFOWIyK7XQ"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "404" ]]
+}
+
+@test "JWT bucket invalid test" {
+  run GET "$CACHE/get?bucket=testfail&key=asdf" \
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCIsImJ1Y2tldCI6InRlc3QiLCJwcmVmaXgiOiJhc2RmIn0.pzAVlCDgZ4BmYZppcjaaKftoV5j0Fm5OhmUcbAJ4oGvlKeq1D4Pgm9xkB0afiBWfOmNLV5S5Ib8bVz0qiIholAeyTtQzNWc5pPe8H20_KMMAzuM-si3G_NdTFsWH-xR_WXBAlYaRR96NruT2mPe333LkEsbhnJHBP8uXQikRK7t4WBrafv7OEnoOYa2DUQpNoqqTmKj9t4SS9zUySV6dD9xUUYo2JOZZ8JdemXPe8C1OFJz__ibxcmpCWMhIJQYFEexa2aKvQEtD2zLXusOmLiN2dTKU9q_yky1hncb5yaVrQUaHulusl_u0CPazi7XOkO8MpLDOw8ounFOWIyK7XQ"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "401" ]]
+}
+
+@test "JWT prefix invalid test" {
+  run GET "$CACHE/get?bucket=test&key=keyfail" \
+    -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjQxMzI1NjI2NjAsImF1ZCI6ImNhY2hlbmF0b3IiLCJpc3MiOiJhdXRoLXByb3ZpZGVyIiwiYWN0aW9uIjoiUkVBRCIsImJ1Y2tldCI6InRlc3QiLCJwcmVmaXgiOiJhc2RmIn0.pzAVlCDgZ4BmYZppcjaaKftoV5j0Fm5OhmUcbAJ4oGvlKeq1D4Pgm9xkB0afiBWfOmNLV5S5Ib8bVz0qiIholAeyTtQzNWc5pPe8H20_KMMAzuM-si3G_NdTFsWH-xR_WXBAlYaRR96NruT2mPe333LkEsbhnJHBP8uXQikRK7t4WBrafv7OEnoOYa2DUQpNoqqTmKj9t4SS9zUySV6dD9xUUYo2JOZZ8JdemXPe8C1OFJz__ibxcmpCWMhIJQYFEexa2aKvQEtD2zLXusOmLiN2dTKU9q_yky1hncb5yaVrQUaHulusl_u0CPazi7XOkO8MpLDOw8ounFOWIyK7XQ"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "401" ]]
 }

@@ -17,14 +17,23 @@ var (
 
 type JwtClaims struct {
 	Action string `json:"action"`
-	// TODO: Handle bucket+key validation
-	// Bucket string `json:"bucket"`
-	// Key string `json:"key"`
+	Bucket string `json:"bucket"`
+	Prefix string `json:"prefix"`
 	jwt.StandardClaims
 }
 
 type AuthHeader struct {
 	Authorization string `header:"Authorization"`
+}
+
+func getRequestParam(c *gin.Context, paramKey string) string {
+	if c.Param(paramKey) != "" {
+		return c.Param(paramKey)
+	} else if c.Query(paramKey) != "" {
+		return c.Query(paramKey)
+	} else {
+		return ""
+	}
 }
 
 func jwtMiddleware() gin.HandlerFunc {
@@ -47,6 +56,7 @@ func jwtMiddleware() gin.HandlerFunc {
 		token, err := jwt.ParseWithClaims(jwtToken, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return jwtRsaPubKey, nil
 		})
+
 		if err != nil {
 			log.Debugf("JWT token couldn't be parsed: %v", err)
 			if ve, ok := err.(*jwt.ValidationError); ok {
@@ -77,6 +87,7 @@ func jwtMiddleware() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(*JwtClaims); ok && token.Valid {
+
 			if jwtIssuerFlag != "" && strings.TrimSpace(claims.StandardClaims.Issuer) != jwtIssuerFlag {
 				log.Debugf("JWT token issuer claim doesn't match provided -jwt-issuer value")
 				jwtRequestsMetric.WithLabelValues("false", "JWT token issuer claim does not match").Inc()
@@ -97,6 +108,34 @@ func jwtMiddleware() gin.HandlerFunc {
 				log.Debugf("Got valid JWT token, but action allow doesn't match request (action %s != method %s)", claims.Action, c.Request.Method)
 				jwtRequestsMetric.WithLabelValues("false", "JWT action does not match method").Inc()
 				c.JSON(401, gin.H{"error": "JWT token action allow doesn't match request method"})
+				c.Abort()
+				return
+			}
+
+			keyParam := getRequestParam(c, "key")
+			bucketParam := getRequestParam(c, "bucket")
+
+			if keyParam == "" {
+				keyParam = getRequestParam(c, "prefix")
+			}
+
+			if keyParam == "" {
+				keyParam = getRequestParam(c, "path")
+			}
+
+			// Compare request bucket and key params with JWT bucket and key params
+			if keyParam != "" && strings.TrimSpace(claims.Prefix) != "" && !strings.HasPrefix(keyParam, strings.TrimSpace(claims.Prefix)) {
+				log.Debugf("JWT token prefix does not match URL object (prefix %s != object %s)", claims.Prefix, strings.TrimSpace(keyParam))
+				jwtRequestsMetric.WithLabelValues("false", "JWT token prefix does not match URL object").Inc()
+				c.JSON(401, gin.H{"error": "JWT token prefix does not match URL object"})
+				c.Abort()
+				return
+			}
+
+			if bucketParam != "" && strings.TrimSpace(claims.Bucket) != "" && strings.TrimSpace(claims.Bucket) != bucketParam {
+				log.Debugf("JWT token bucket does not match URL bucket (jwt bucket %s != URL bucket %s", claims.Bucket, strings.TrimSpace(bucketParam))
+				jwtRequestsMetric.WithLabelValues("false", "JWT token bucket does not match URL bucket").Inc()
+				c.JSON(401, gin.H{"error": "JWT token bucket does not match URL bucket"})
 				c.Abort()
 				return
 			}
