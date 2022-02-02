@@ -51,7 +51,7 @@ func jwtMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		jwtToken := strings.TrimSpace(strings.ReplaceAll(h.Authorization, "Bearer", ""))
+		jwtToken := strings.TrimSpace(strings.Replace(h.Authorization, "Bearer", "", 1))
 
 		token, err := jwt.ParseWithClaims(jwtToken, &JwtClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return jwtRsaPubKey, nil
