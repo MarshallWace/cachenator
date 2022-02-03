@@ -174,6 +174,7 @@ func runServer() {
 		})
 		router.GET("/:bucket/*key", transparentS3Get)
 		router.PUT("/:bucket/*key", transparentS3Put)
+		router.POST("/:bucket/*key", transparentS3Put)
 		router.DELETE("/:bucket/*key", transparentS3Delete)
 	}
 
