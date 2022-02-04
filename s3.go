@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+
+	//"net/http"
 	"time"
 
 	"github.com/adrianchifor/go-parallel"
@@ -178,6 +180,35 @@ func transparentS3Put(c *gin.Context) {
 	}()
 
 	c.String(200, "")
+}
+
+func transparentS3Post(c *gin.Context) {
+	bucket := c.Param("bucket")
+	key := c.Param("key")
+	//file := c.Param("file")
+	uploads, ok := c.Get("uploads")
+	log.Debugf("Upload Params:", uploads)
+	if !ok {
+		log.Debugf("Uploads Param exists, starting new multi-part post upload")
+		input := &s3.CreateMultipartUploadInput{
+			Bucket: aws.String(bucket),
+			Key:    aws.String(key),
+			//ContentType: aws.String(fileType),
+		}
+
+		resp, err := s3Client.CreateMultipartUpload(input)
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+		log.Debugf("Response: ", resp)
+		c.XML(200, resp)
+		//c.Data(http.StatusOK, "text/html; charset=utf-8", []byte(resp.String()))
+
+	}
+
+	log.Debugf("Uploads %s request started '%s#%s' from S3", uploads, bucket, key)
+
 }
 
 func transparentS3Get(c *gin.Context) {

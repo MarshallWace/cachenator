@@ -20,7 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.17.3"
+const version string = "0.17.4"
 
 var (
 	host                   string
@@ -174,6 +174,7 @@ func runServer() {
 		})
 		router.GET("/:bucket/*key", transparentS3Get)
 		router.PUT("/:bucket/*key", transparentS3Put)
+		router.POST("/:bucket/*key", transparentS3Post)
 		router.DELETE("/:bucket/*key", transparentS3Delete)
 	}
 
