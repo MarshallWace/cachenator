@@ -7,6 +7,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -53,6 +54,93 @@ func initS3() {
 		d.Concurrency = downloadConcurrency
 		d.BufferProvider = s3manager.NewPooledBufferedWriterReadFromProvider(5 * 1024 * 1024)
 	})
+}
+
+func transparentS3Head(c *gin.Context) {
+	bucket := c.Param("bucket")
+	key := c.Param("key")
+
+	res, err := s3Client.HeadObject(&s3.HeadObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		msg := fmt.Sprintf("Failed to get header for '%s#%s' from S3: %v", bucket, key, err)
+		log.Errorf(msg)
+		c.JSON(500, gin.H{"error": msg})
+		return
+	}
+
+	// Generated (mostly) programatically from
+	// https://docs.aws.amazon.com/AmazonS3/latest/API/API_HeadObject.html
+	if res.DeleteMarker != nil {
+		c.Header("x-amz-delete-marker", strconv.FormatBool(*res.DeleteMarker))
+	}
+	if res.AcceptRanges != nil {
+		c.Header("accept-ranges", *res.AcceptRanges)
+	}
+	if res.Expiration != nil {
+		c.Header("x-amz-expiration", *res.Expiration)
+	}
+	if res.Restore != nil {
+		c.Header("x-amz-restore", *res.Restore)
+	}
+	if res.ArchiveStatus != nil {
+		c.Header("x-amz-archive-status", *res.ArchiveStatus)
+	}
+	if res.LastModified != nil {
+		c.Header("Last-Modified", res.LastModified.Format("Sun, 1 Jan 2006 12:00:00 GMT"))
+	}
+	if res.ContentLength != nil {
+		c.Header("Content-Length", strconv.FormatInt(*res.ContentLength, 10))
+	}
+	if res.ETag != nil {
+		c.Header("ETag", *res.ETag)
+	}
+	if res.MissingMeta != nil {
+		c.Header("x-amz-missing-meta", strconv.FormatInt(*res.MissingMeta, 10))
+	}
+	if res.VersionId != nil {
+		c.Header("x-amz-version-id", *res.VersionId)
+	}
+	if res.CacheControl != nil {
+		c.Header("Cache-Control", *res.CacheControl)
+	}
+	if res.ContentDisposition != nil {
+		c.Header("Content-Disposition", *res.ContentDisposition)
+	}
+	if res.ContentEncoding != nil {
+		c.Header("Content-Encoding", *res.ContentEncoding)
+	}
+	if res.ContentLanguage != nil {
+		c.Header("Content-Language", *res.ContentLanguage)
+	}
+	if res.ContentType != nil {
+		c.Header("Content-Type", *res.ContentType)
+	}
+	if res.Expires != nil {
+		c.Header("Expires", *res.Expires)
+	}
+	if res.WebsiteRedirectLocation != nil {
+		c.Header("x-amz-website-redirect-location", *res.WebsiteRedirectLocation)
+	}
+	if res.ServerSideEncryption != nil {
+		c.Header("x-amz-server-side-encryption", *res.ServerSideEncryption)
+	}
+	if res.SSECustomerAlgorithm != nil {
+		c.Header("x-amz-server-side-encryption-customer-algorithm", *res.SSECustomerAlgorithm)
+	}
+	if res.SSECustomerKeyMD5 != nil {
+		c.Header("x-amz-server-side-encryption-customer-key-MD5", *res.SSECustomerKeyMD5)
+	}
+	if res.SSEKMSKeyId != nil {
+		c.Header("x-amz-server-side-encryption-aws-kms-key-id", *res.SSEKMSKeyId)
+	}
+	if res.BucketKeyEnabled != nil {
+		c.Header("x-amz-server-side-encryption-bucket-key-enabled", strconv.FormatBool(*res.BucketKeyEnabled))
+	}
+
+	c.String(200, "")
 }
 
 func restS3Upload(c *gin.Context) {

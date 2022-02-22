@@ -13,7 +13,6 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
@@ -166,12 +165,7 @@ func runServer() {
 	if s3TransparentAPI {
 		router.GET("/", transparentS3ListBuckets)
 		router.GET("/:bucket", transparentS3ListObjects)
-		router.HEAD("/:bucket/*key", func(c *gin.Context) {
-			// Dummy headers and 200 response to proceed to GET
-			c.Header("Content-Length", "0")
-			c.Header("Last-Modified", time.Now().Format("Mon, 2 Jan 2006 15:04:05 MST"))
-			c.String(200, "")
-		})
+		router.HEAD("/:bucket/*key", transparentS3Head)
 		router.GET("/:bucket/*key", transparentS3Get)
 		router.PUT("/:bucket/*key", transparentS3Put)
 		router.DELETE("/:bucket/*key", transparentS3Delete)
