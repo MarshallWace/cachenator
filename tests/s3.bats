@@ -86,7 +86,7 @@ load helpers.sh
   [[ "$status" -eq 0 ]]
   [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
 
-  run AWS_TRANSPARENT s3api head-object s3://$BUCKET/blob_cached_transparent
+  run AWS_TRANSPARENT s3api head-object --bucket=$BUCKET --key=blob_cached_transparent
   [[ "$status" -eq 0 ]]
 }
 
