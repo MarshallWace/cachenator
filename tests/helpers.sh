@@ -66,13 +66,13 @@ run_cachenator_jwt() {
 
 cleanup() {
   echo "Cleaning up cachenator processes"
-  pgrep cachenator | xargs kill
+  pgrep cachenator | xargs kill || echo "Couldn't find cachenator"
 
   echo "Cleaning up AWS S3 localstack"
-  docker rm -f localstack-s3 >/dev/null 2>&1 || true
+  docker rm -f localstack-s3 >/dev/null 2>&1 || echo "Couldn't find localstack"
 
   echo "Cleaning up /tmp"
-  rm -f $TMP_BLOB
+  rm -f $TMP_BLOB || echo "Couldn't find $TMP_BLOB"
 
   echo "Done"
 }
