@@ -14,6 +14,7 @@ import (
 
 	"github.com/adrianchifor/go-parallel"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3iface"
@@ -65,9 +66,18 @@ func transparentS3Head(c *gin.Context) {
 		Key:    aws.String(key),
 	})
 	if err != nil {
-		msg := fmt.Sprintf("Failed to get header for '%s#%s' from S3: %v", bucket, key, err)
-		log.Errorf(msg)
-		c.JSON(500, gin.H{"error": msg})
+		if reqErr, ok := err.(awserr.RequestFailure); ok {
+			// see https://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+			c.XML(reqErr.StatusCode(), gin.H{
+				"Code":      reqErr.Code(),
+				"Message":   reqErr.Message(),
+				"RequestId": reqErr.RequestID(),
+			})
+		} else {
+			msg := fmt.Sprintf("Unexpected error for HEAD/%s/%s: %v", bucket, key, err)
+			log.Errorf(msg)
+			c.JSON(500, gin.H{"error": msg})
+		}
 		return
 	}
 
