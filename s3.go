@@ -99,7 +99,7 @@ func transparentS3Head(c *gin.Context) {
 		c.Header("x-amz-archive-status", *res.ArchiveStatus)
 	}
 	if res.LastModified != nil {
-		c.Header("Last-Modified", res.LastModified.Format("Sun, 1 Jan 2006 12:00:00 GMT"))
+		c.Header("Last-Modified", res.LastModified.Format("Mon, 2 Jan 2006 15:04:05 GMT"))
 	}
 	if res.ContentLength != nil {
 		c.Header("Content-Length", strconv.FormatInt(*res.ContentLength, 10))
