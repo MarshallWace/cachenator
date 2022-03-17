@@ -18,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.18.0"
+const version string = "0.19.0"
 
 var (
 	host                   string
