@@ -1,11 +1,11 @@
-FROM golang:1.15-alpine as builder
+FROM golang:1.18-alpine as builder
 
 RUN apk add --no-cache git gcc musl-dev
 
 WORKDIR /go/src/cachenator
-COPY *.go go.mod /go/src/cachenator/
+COPY *.go go.mod go.sum /go/src/cachenator/
 
-RUN go mod download
+RUN go mod tidy && go mod download
 
 RUN go build -o /go/bin/cachenator
 

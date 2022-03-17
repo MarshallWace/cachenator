@@ -1,5 +1,4 @@
-// Copyright 2021 Adrian Chifor, Marshall Wace
-// SPDX-FileCopyrightText: 2021 Marshall Wace <opensource@mwam.com>
+// SPDX-FileCopyrightText: 2022 Marshall Wace <opensource@mwam.com>
 // SPDX-License-Identifier: GPL-3.0-only
 
 package main
@@ -19,7 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version string = "0.18.0"
+const version string = "0.19.0"
 
 var (
 	host                   string
