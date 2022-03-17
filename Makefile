@@ -16,5 +16,5 @@ test: fmt download build
 
 clean:
 	rm -rf bin/
-	rm -f go.sum
+	go mod tidy
 	go clean -modcache
