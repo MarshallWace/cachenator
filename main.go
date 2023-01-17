@@ -31,6 +31,7 @@ var (
 	logLevel               string
 	versionFlag            bool
 	jwtRsaPubKeyFlag       string
+	readOnly               bool
 )
 
 func init() {
@@ -66,6 +67,7 @@ func init() {
 	flag.StringVar(&jwtAudienceFlag, "jwt-audience", "", "JWT audience claim")
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (info, debug, error, warn)")
 	flag.BoolVar(&versionFlag, "version", false, "Version")
+	flag.BoolVar(&readOnly, "read-only", false, "Read only mode, disable upload and delete operations to S3 (default false)")
 	flag.Parse()
 }
 
@@ -148,8 +150,13 @@ func runServer() {
 	}
 
 	router.MaxMultipartMemory = maxMultipartMemory << 20
-	router.POST("/upload", restS3Upload)
-	router.DELETE("/delete", restS3Delete)
+	if readOnly {
+		router.POST("/upload", unsupportedRequest)
+		router.DELETE("/delete", unsupportedRequest)
+	} else {
+		router.POST("/upload", restS3Upload)
+		router.DELETE("/delete", restS3Delete)
+	}
 	router.GET("/list", restS3List)
 	router.GET("/get", restCacheGet)
 	router.POST("/prewarm", restCachePrewarm)
@@ -162,12 +169,17 @@ func runServer() {
 	})
 
 	if s3TransparentAPI {
+		if readOnly {
+			router.PUT("/:bucket/*key", unsupportedRequest)
+			router.DELETE("/:bucket/*key", unsupportedRequest)
+		} else {
+			router.PUT("/:bucket/*key", transparentS3Put)
+			router.DELETE("/:bucket/*key", transparentS3Delete)
+		}
 		router.GET("/", transparentS3ListBuckets)
 		router.GET("/:bucket", transparentS3ListObjects)
 		router.HEAD("/:bucket/*key", transparentS3Head)
 		router.GET("/:bucket/*key", transparentS3Get)
-		router.PUT("/:bucket/*key", transparentS3Put)
-		router.DELETE("/:bucket/*key", transparentS3Delete)
 	}
 
 	server := &http.Server{

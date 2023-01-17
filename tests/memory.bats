@@ -5,7 +5,7 @@ load helpers.sh
 # Get
 
 @test "getting blobs from memory" {
-  nodes=("$CACHE" "$CACHE2" "$CACHE3")
+  nodes=("$CACHE" "$CACHE2" "$CACHE3" "$CACHE_READONLY")
   for node in "${nodes[@]}"; do
     run GET "$node/get?bucket=$BUCKET&key=blob"
     [[ "$status" -eq 0 ]]
@@ -74,7 +74,7 @@ load helpers.sh
 # Metrics
 
 @test "checking if cluster is exposing prometheus metrics" {
-  nodes=("$CACHE_METRICS" "$CACHE2_METRICS" "$CACHE3_METRICS")
+  nodes=("$CACHE_METRICS" "$CACHE2_METRICS" "$CACHE3_METRICS" "$CACHE_READONLY_METRICS")
   for node in "${nodes[@]}"; do
     run GET "$node/metrics"
     [[ "$status" -eq 0 ]]

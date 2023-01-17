@@ -17,6 +17,10 @@ load helpers.sh
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
 
+  run POST "$CACHE_READONLY/upload?bucket=$BUCKET" -F "files=@$DIR/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "400" ]]
+
   run AWS s3 ls s3://$BUCKET/blob
   [[ "$status" -eq 0 ]]
 
@@ -39,12 +43,20 @@ load helpers.sh
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
 
+  run POST "$CACHE_READONLY/upload?bucket=$BUCKET&path=folder" -F "files=@$DIR/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "400" ]]
+
   run AWS s3 ls s3://$BUCKET/folder/blob
   [[ "$status" -eq 0 ]]
 
   run POST "$CACHE/upload?bucket=$BUCKET&path=folder/subfolder" -F "files=@$DIR/blob"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
+
+  run POST "$CACHE_READONLY/upload?bucket=$BUCKET&path=folder/subfolder" -F "files=@$DIR/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "400" ]]
 
   run AWS s3 ls s3://$BUCKET/folder/subfolder/blob
   [[ "$status" -eq 0 ]]
@@ -82,6 +94,11 @@ load helpers.sh
   [[ "$output" == "200" ]]
   [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
 
+  run GET "$CACHE_READONLY/get?bucket=$BUCKET&key=folder/subfolder/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+  [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
+
   run AWS_TRANSPARENT s3 cp s3://$BUCKET/blob_cached_transparent $TMP_BLOB
   [[ "$status" -eq 0 ]]
   [[ "$(SHA $DIR/blob)" == "$(SHA $TMP_BLOB)" ]]
@@ -106,7 +123,17 @@ load helpers.sh
   [[ "$output" == "200" ]]
   [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "6" ]]
 
+  run GET "$CACHE_READONLY/list?bucket=$BUCKET"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+  [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "6" ]]
+
   run GET "$CACHE/list?bucket=$BUCKET&prefix=folder"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+  [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "2" ]]
+
+  run GET "$CACHE_READONLY/list?bucket=$BUCKET&prefix=folder"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
   [[ "$(cat $TMP_BLOB | jq '.keys | length')" == "2" ]]
@@ -130,6 +157,10 @@ load helpers.sh
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
 
+  run DELETE "$CACHE_READONLY/delete?bucket=$BUCKET&key=folder/subfolder/blob"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "400" ]]
+
   run AWS s3 ls s3://$BUCKET/folder/subfolder/blob
   [[ "$status" -eq 1 ]]
 
@@ -144,6 +175,10 @@ load helpers.sh
   run DELETE "$CACHE/delete?bucket=$BUCKET&prefix=folder/subfolder"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
+
+  run DELETE "$CACHE_READONLY/delete?bucket=$BUCKET&prefix=folder/subfolder"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "400" ]]
 
   run AWS s3 ls s3://$BUCKET/folder/subfolder
   [[ "$status" -eq 1 ]]
@@ -165,6 +200,10 @@ load helpers.sh
   [[ "$output" == "404" ]]
 
   run POST "$CACHE/prewarm?bucket=$BUCKET&prefix=folder"
+  [[ "$status" -eq 0 ]]
+  [[ "$output" == "200" ]]
+
+  run POST "$CACHE_READONLY/prewarm?bucket=$BUCKET&prefix=folder"
   [[ "$status" -eq 0 ]]
   [[ "$output" == "200" ]]
 }
