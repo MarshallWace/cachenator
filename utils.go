@@ -118,3 +118,7 @@ func getClientIP(c *gin.Context) string {
 
 	return requester
 }
+
+func unsupportedRequest(c *gin.Context) {
+	c.String(400, "Unsupported request under read-only mode.")
+}
