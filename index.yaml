@@ -1,3 +1,13 @@
 apiVersion: v1
-entries: {}
-generated: "2023-01-19T12:46:13.163346326Z"
+entries:
+  cachenator:
+  - apiVersion: v2
+    created: "2023-01-19T13:24:24.441325258Z"
+    description: Helm chart for deploying cachenator
+    digest: 38ec05c1375b8febdbd2e77bb012eef3e9ad91759c6eb9cc3e0cf95e92306610
+    name: cachenator
+    type: application
+    urls:
+    - https://github.com/MarshallWace/cachenator/releases/download/cachenator-0.1.0/cachenator-0.1.0.tgz
+    version: 0.1.0
+generated: "2023-01-19T13:24:24.441330758Z"
