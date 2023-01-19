@@ -54,10 +54,6 @@ e.g. test or research or production
 {{ default (.Release.Namespace | regexFind "[^-]+$" ) .Values.clustername }}
 {{- end -}}
 
-{{- define "cachenator.computedFQDN" -}}
-{{- .Values.hostname -}}.{{ include "cachenator.clusterName" . }}.mwam.local
-{{- end -}}
-
 {{- define "cachenator.computedShortname" -}}
 {{- .Values.hostname | regexFind "^[^.]+"  -}}
 {{- end -}}
