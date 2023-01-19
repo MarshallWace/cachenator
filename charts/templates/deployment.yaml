@@ -96,17 +96,6 @@ spec:
       priorityClassName: {{ . }}
       {{- end }}
       containers:
-        {{- if .Values.enable_dns_caching_pod }}
-        - name: nscd
-          image: {{ required ".Values.dns_caching_pod_image is required if enable_dns_caching_pod is true." .Values.dns_caching_pod_image }}
-          volumeMounts:
-            - name: nscd-socket
-              mountPath: /var/run/nscd/
-          resources:
-            requests:
-              cpu: 30m
-              memory: 50Mi
-        {{- end }}
         - name: {{ .Release.Name }}
           image: {{ .Values.image.registry }}/{{ required ".Values.image.image is required" .Values.image.image }}:{{.Values.image.tag}}
           {{- if .Values.imagePullPolicy }}
