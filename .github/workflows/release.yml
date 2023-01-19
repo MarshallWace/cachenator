@@ -21,6 +21,6 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.1.0
         with:
-          registry: ghcr.io
-          username: mwam-ci
-          password: ${{ secrets.CR_PAT }}
+          charts_dir: charts
+        env:
+          CR_TOKEN: "${{ secrets.CR_PAT }}"
