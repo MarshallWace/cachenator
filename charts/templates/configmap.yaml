@@ -1,0 +1,16 @@
+{{- $root := . -}}
+
+{{- with .Values.configs }}
+{{ range $k, $v := . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  {{- $cleanKey := regexReplaceAll "\\W+|[.]+" $k "-" }}
+  name: {{ $cleanKey }}
+  labels: {{ include "cachenator.labels" $root | nindent 4 }}
+
+data:
+  {{$k}}: |
+  {{- $v | nindent 4}}
+{{- end }}
+{{- end }}

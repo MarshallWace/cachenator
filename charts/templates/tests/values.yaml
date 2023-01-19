@@ -1,0 +1,44 @@
+image:
+  registry: docker-ghcr-remote.abc.local
+  image: marshallwace/cachenator
+  tag: 0.19.1
+args:
+  - -s3-endpoint=end_point
+  - -max-cache-size=0
+  - -timeout=60000
+  - -read-only
+ports:
+- name: http
+  port: 8080
+  exposeInIngress: true
+  protocol: TCP
+- name: http-metrics
+  port: 9095
+  exposeInIngress: false
+enableAuthProxy: false
+hostname: hostname.test.abcd.local
+generateTLSCertificate: true
+envVars:
+- name: AWS_REGION
+  value: eu-west-2
+- name: AWS_CA_BUNDLE
+  value: certs
+# NOTE - this env var is required if using non 'default' creds profile
+- name: AWS_PROFILE
+  value: default
+# NOTE - this env var is required for cachenator to load the creds file
+- name: AWS_SHARED_CREDENTIALS_FILE
+  value: /.aws/credentials
+volumeMounts:
+  - name: root-ca
+    mountPath: certs
+    subPath: ca.crt
+    readOnly: true
+volumes:
+  - name: root-ca
+    configMap:
+      name: root-ca
+      items:
+        - key: root-ca
+          path: ca.crt
+configs: {}
