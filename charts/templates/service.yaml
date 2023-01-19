@@ -1,0 +1,40 @@
+{{- $root := . -}}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "cachenator.name" . }}
+  namespace: {{ .Release.Namespace }}
+  labels: {{ include "cachenator.labels" . | nindent 4 }}
+  {{- if .Values.serviceLabels }}
+{{- toYaml .Values.serviceLabels | nindent 4 }}
+  {{- end }}
+  {{- if .Values.serviceAnnotations }}
+  annotations:
+{{- toYaml .Values.serviceAnnotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.ports }}
+  ports:
+  {{- range $port := . }}
+  - name: {{ $port.name }}
+    port: {{ $port.port }}
+    protocol: {{ $port.protocol | default "TCP" }}
+    targetPort: {{ $port.targetPort | default $port.port }}
+    {{- if $port.appProtocol }}
+    appProtocol: {{ $port.appProtocol }}
+    {{- end }}
+  {{- end }}
+  {{- end }}
+  selector:
+    app: {{ template "cachenator.name" . }}
+  type: {{ .Values.serviceType }}
+  {{- if .Values.sessionAffinity }}
+  sessionAffinity: {{ .Values.sessionAffinity }}
+  {{- end }}
+  {{- if .Values.sessionAffinityConfig }}
+  sessionAffinityConfig:  {{ toYaml .Values.sessionAffinityConfig | nindent 4 }}
+  {{- end }}
+  {{- if .Values.headlessService }}
+  clusterIP: "None"
+  {{- end }}

@@ -1,0 +1,224 @@
+image:
+  registry:
+  image:
+  tag: 0.0.1
+
+args:
+
+# hostname: ""
+
+ports:
+  - name: http
+    port: 8080
+    exposeInIngress: true
+
+podPriority: ""
+
+headlessService: false
+
+serviceType: ClusterIP
+
+generateTLSCertificate: true
+
+replicas: 1
+
+##################
+#### Optional ####
+##################
+
+# The seconds kubernetes will wait for your pod to terminate when asked.
+# once this timeout is reached it will send a SIGKILL to the pod
+# terminationGracePeriodSeconds: 30
+
+volumes: []
+  # - name: abc
+  #   nfs:
+  #     server: abcd.efg.local
+  #     path: /abc/defg
+
+volumeMounts: []
+  # - name: abcd
+  #   mountPath: /abcd-prod
+
+# https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#strategy
+strategyType: RollingUpdate
+strategyRollingParams: {}
+
+# https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-policy
+dnsPolicy: "ClusterFirst"
+dnsConfig: {}
+
+sessionAffinity: ""
+sessionAffinityConfig: {}
+  # clientIP:
+  #   timeoutSeconds: 10800
+
+labels: {}
+#  test: testValue
+
+podLabels: {}
+
+technicalService: ''
+
+serviceLabels: {}
+  # abcd.local/somelabel: value
+
+serviceAnnotations: {}
+
+annotations: {}
+  # test: testValue
+  # test2: testValue2
+
+ingressAnnotations: {}
+  # haproxy.router.openshift.io/balance: roundrobin
+  # haproxy.router.openshift.io/timeout: 320s
+
+podAnnotations: {}
+  # test3: testValue
+  # test4: testValue2
+
+# https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
+podManagementPolicy: OrderedReady
+
+configs: {}
+
+serviceAccount: {}
+
+tolerations: []
+
+enable_tmp_in_ram: true
+
+tmp_ram_size_limit: 20Gi
+
+pvcs: []
+
+# use envFrom to populate environment variables from a configmap
+# Note: env will take precedence over envFrom (see: https://stackoverflow.com/a/54398918/17542775)
+# See: https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#configure-all-key-value-pairs-in-a-configmap-as-container-environment-variables
+envFrom: []
+
+args: []
+  # - -c
+  # - echo hello
+
+nodeSelector: {}
+
+# https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+affinity: {}
+
+# To override the container entrypoint command
+# overrideCommand:
+    # - sh
+    # - -c
+    # - chmod +x /opt/app-root/entrypoint.sh && /opt/app-root/entrypoint.sh
+
+# https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/
+lifecycle: {}
+  # preStop:
+  #   exec:
+  #     command:
+  #       - /bin/bash
+  #       - -c
+  #       - |
+  #         # some script
+
+
+#For additional side-containers:
+#sidecars:
+  # - name: sidecar_name
+  #   image: docker-registry/image:tag
+  #   resources:
+  #     limits:
+  #       cpu: '20'
+  #       memory: 35Gi
+  #     requests:
+  #       cpu: 50m
+  #       memory: 15Gi
+
+livenessProbe: {}
+  # httpGet:
+  #   path: /healthz
+  #   port: 8080
+  #   httpHeaders:
+  #   - name: Custom-Header
+  #     value: Awesome
+  # initialDelaySeconds: 3
+  # periodSeconds: 3
+
+readinessProbe: {}
+  # exec:
+  #   command:
+  #   - cat
+  #   - /tmp/healthy
+  # initialDelaySeconds: 5
+  # periodSeconds: 5
+
+startupProbe: {}
+  # httpGet:
+  #   path: /healthz
+  #   port: liveness-port
+  # failureThreshold: 30
+  # periodSeconds: 10
+
+resources: {}
+  # requests:
+  #   cpu: 100m
+  #   memory: 512Mi
+  # limits:
+  #   cpu: 200m
+  #   memory: 1024Mi
+
+verticalPodAutoscaler:
+  updateMode: "Off"
+  # Set custom updateMode per container (optional)
+  # containerPolicies:
+  #   - containerName: my-sidecar
+  #     mode: "Off"
+  #   - containerName: other-sidecar
+  #     mode: "Initial"
+
+# https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
+# updateMode can be:
+#   "Off"     - Only recommends resource requests and limits
+#   "Initial" - Applies recommendations only at pod creation
+#   "Auto"    - Automatically applies recommendations throughout the pod lifetime
+verticalPodAutoscaler:
+  updateMode: "Off"
+  # Set custom updateMode per container (optional)
+  # containerPolicies:
+  #   - containerName: my-sidecar
+  #     mode: "Off"
+  #   - containerName: other-sidecar
+  #     mode: "Initial"
+
+
+
+##################
+#### Defaults ####
+##################
+
+# Applies to ingresses only
+generateTLSCertificate: true
+# default for now, shouldn't have to change unless we deploy more issuers
+certIssuerName: vault-issuer
+
+securityContext: {}
+  # fsGroup: 1001
+  # runAsUser: 1001
+
+podSecurityContext: {}
+  # capabilities:
+  #   add:
+  #     - SYS_ADMIN
+  # privileged: true
+  # allowPrivilegeEscalation: true
+
+# Add extra entries in /etc/hosts in pods
+# hostAliases:
+#   - ip: "127.0.0.1"
+#     hostnames:
+#       - "foo.local"
+
+#imagePullPolicy: IfNotPresent
+
+mutating_webhook_configuration: {}

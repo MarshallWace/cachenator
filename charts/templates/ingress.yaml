@@ -1,0 +1,104 @@
+{{- $root := . -}}
+
+{{- if .Values.hostname }}
+
+{{- if gt (len .Values.hostname) 63 }}
+{{- fail "The length of the hostname is > 63 characters which is the upper bound supported." }}
+{{- end -}}
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+  {{- with .Values.ingressAnnotations -}}
+    {{ toYaml . | nindent 4 }}
+  {{- end }}
+    route.openshift.io/allow-non-dns-compliant-host: "true"
+  {{- if .Values.generateTLSCertificate }}
+    cert-manager.io/cluster-issuer: {{ .Values.certIssuerName }}
+    cert-manager.io/common-name: {{ .Values.hostname }} # TLS Common Name
+  {{- end }}
+  name: {{ template "cachenator.name" . }}
+  labels: {{ include "cachenator.labels" . | nindent 8 }}
+spec:
+  {{- if .Values.generateTLSCertificate }}
+  tls:
+  - hosts:
+    - {{ .Values.hostname }}
+    {{ if ne (include "cachenator.computedShortname" $root) $root.Values.hostname }}
+    - {{ include "cachenator.computedShortname" . }}
+    {{ end }}
+    {{ with .Values.additionalHostnames }}
+    {{ range $host := . }}
+    - {{ $host | toYaml }}
+    {{- end }}
+    {{- end }}
+    secretName: {{ template "cachenator.name" $root }}-ingress-tls  # Name of the Secret where the TLS certificate bundle is stored (tls.key, tls.crt, ca.crt); also a name of the Certificate resource cert-manager automatically creates in the Ingress namespace
+  {{ end }}
+  rules:
+    # When >2 ports are defined
+    {{- $portsDefined := len .Values.ports -}}
+
+    {{ if gt $portsDefined 1 }}
+    # iterate over all ports and check if at least one of them
+    # has exposeInIngress = true
+    {{- $exposeInIngressDefined := false -}}
+
+    {{- range $port := .Values.ports }}
+
+    {{ if $port.exposeInIngress }}
+    {{- $exposeInIngressDefined = true -}}
+    {{ end }}
+
+    {{ end }}
+
+    {{ if ( eq $exposeInIngressDefined false) }}
+    {{- fail "$exposeInIngressDefined When defining >1 ports in .Values.ports, you need to specify at least one that has exposeInIngress = true" }}
+    {{ end }}
+
+    {{ end }}
+    # end port check
+
+    {{- range $port := .Values.ports }}
+    {{ if or (eq ($port.exposeInIngress | quote) "") ($port.exposeInIngress) }}
+    - host: {{ $root.Values.hostname }}
+      http:
+        paths:
+        - backend:
+            service:
+              name: {{ $port.customServiceName | default (include "cachenator.name" $root) }}
+              port:
+                name: {{ $port.name }}
+          path: {{ $port.hostIngressPath | default $root.Values.hostIngressPath }}
+          pathType: ImplementationSpecific
+    {{ if ne (include "cachenator.computedShortname" $root) $root.Values.hostname }}
+    - host: {{ template "cachenator.computedShortname" $root }}
+      http:
+        paths:
+        - backend:
+            service:
+              name: {{ $port.customServiceName | default (include "cachenator.name" $root) }}
+              port:
+                name: {{ $port.name }}
+          path: {{ $port.hostIngressPath | default $root.Values.hostIngressPath }}
+          pathType: ImplementationSpecific
+    {{ end }}
+    {{ with $root.Values.additionalHostnames }}
+    {{- range $host := . }}
+    - host: {{ $host | toYaml }}
+      http:
+        paths:
+        - backend:
+            service:
+              name: {{ $port.customServiceName | default (include "cachenator.name" $root) }}
+              port:
+                name: {{ $port.name }}
+          path: {{ $port.hostIngressPath | default $root.Values.hostIngressPath }}
+          pathType: ImplementationSpecific
+    {{- end }}
+    {{ end }}
+
+    {{- end }}
+    {{- end }}
+
+{{ end }}
