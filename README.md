@@ -27,43 +27,51 @@ Features:
 $ docker run -it ghcr.io/marshallwace/cachenator --help
 Usage of /cachenator:
   -cache-on-write
-    	Enable automatic caching on uploads (default false)
+        Enable automatic caching on uploads (default false)
   -disable-http-metrics
-    	Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)
+        Disable HTTP metrics (req/s, latency) when expecting high path cardinality (default false)
   -host string
-    	Host/IP to identify self in peers list (default "localhost")
+        Host/IP to identify self in peers list (default "localhost")
+  -jwt-audience string
+        JWT audience claim
+  -jwt-issuer string
+        JWT issuer claim
+  -jwt-rsa-publickey-path string
+        Path to JWT RSA public key file
   -log-level string
-    	Logging level (info, debug, error, warn) (default "info")
+        Logging level (info, debug, error, warn) (default "info")
   -max-cache-size int
-    	Max cache size in megabytes. If size goes above, oldest keys will be evicted (default 512)
+        Max cache size in megabytes. If size goes above, oldest keys will be evicted (default 512)
   -max-multipart-memory int
-    	Max memory in megabytes for /upload multipart form parsing (default 128)
+        Max memory in megabytes for /upload multipart form parsing (default 128)
   -metrics-port int
-    	Prometheus metrics port (default 9095)
+        Prometheus metrics port (default 9095)
   -peers string
-    	Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')
+        Peers (default '', e.g. 'http://peer1:8080,http://peer2:8080')
   -port int
-    	Server port (default 8080)
+        Server port (default 8080)
+  -read-only
+        Read only mode, disable write and delete operations to S3 (default false)
   -s3-download-concurrency int
-    	Number of goroutines to spin up when downloading blob chunks from S3 (default 10)
+        Number of goroutines to spin up when downloading blob chunks from S3 (default 10)
   -s3-download-part-size int
-    	Size in megabytes to request from S3 for each blob chunk (minimum 5) (default 5)
+        Size in megabytes to request from S3 for each blob chunk (minimum 5) (default 5)
   -s3-endpoint string
-    	Custom S3 endpoint URL (defaults to AWS)
+        Custom S3 endpoint URL (defaults to AWS)
   -s3-force-path-style
-    	Force S3 path bucket addressing (endpoint/bucket/key vs. bucket.endpoint/key) (default false)
+        Force S3 path bucket addressing (endpoint/bucket/key vs. bucket.endpoint/key) (default false)
   -s3-transparent-api
-    	Enable transparent S3 API for usage from awscli or SDKs (default false)
+        Enable transparent S3 API for usage from awscli or SDKs (default false)
   -s3-upload-concurrency int
-    	Number of goroutines to spin up when uploading blob chunks to S3 (default 10)
+        Number of goroutines to spin up when uploading blob chunks to S3 (default 10)
   -s3-upload-part-size int
-    	Buffer size in megabytes when uploading blob chunks to S3 (minimum 5) (default 5)
+        Buffer size in megabytes when uploading blob chunks to S3 (minimum 5) (default 5)
   -timeout int
-    	Get blob timeout in milliseconds (default 5000)
+        Get blob timeout in milliseconds (default 5000)
   -ttl int
-    	Blob time-to-live in cache in minutes (0 to never expire) (default 60)
+        Blob time-to-live in cache in minutes (0 to never expire) (default 60)
   -version
-    	Version
+        Version
 
 $ docker run -d --name cache1 --network host -v $HOME/.aws/:/root/.aws:ro ghcr.io/marshallwace/cachenator \
   --port 8080 --metrics-port 9095 \
@@ -210,4 +218,15 @@ To also validate standard claims like issuer and audience:
 docker run -d --network host -v $HOME/.aws/:/root/.aws:ro -v $(pwd):/certs \
   ghcr.io/marshallwace/cachenator -jwt-rsa-publickey-path /certs/publickey.crt \
   -jwt-issuer <auth provider> -jwt-audience cachenator
+```
+## Charts
+
+Cachenator charts are released to https://marshallwace.github.io/cachenator/index.yaml
+
+To use the chart:
+```bash
+helm repo add gh_mwam https://marshallwace.github.io/cachenator/
+helm repo update
+helm search repo cachenator
+helm pull gh_mwam/cachenator --version 0.1.0
 ```
