@@ -138,11 +138,26 @@ spec:
           envFrom:
 {{ toYaml . | indent 12 }}
           {{- end }}
-          {{- with .Values.args }}
           args:
+          {{- if .Values.args }}
           {{- range $arg := . }}
             - {{ $arg | toYaml | quote }}
           {{- end }}
+          {{- else }}
+            - "-port={{.Values.caches.port}}"
+            - "-s3-endpoint={{.Values.s3.endpoint}}"
+            - "-s3-download-concurrency={{.Values.s3.download_concurrency}}"
+            - "-s3-download-part-size={{.Values.s3.download_part_size}}"
+            - "-max-cache-size={{.Values.caches.max_cache_size}}"
+            - "-timeout={{.Values.caches.get_blob_timeout}}"
+            {{- if .Values.caches.read_only }}
+            - "-read-only"
+            {{- end }}
+            {{- if .Values.metrics.enabled }}
+            - "metrics-port={{ .Values.metrics.metrics_port }}"
+            {{ else }}
+            - "-disable-http-metrics"
+            {{- end }}
           {{- end }}
 
           {{- if or ( or (.Values.volumeMounts) .Values.enable_tmp_in_ram )  }}

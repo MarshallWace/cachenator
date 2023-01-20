@@ -1,9 +1,22 @@
 image:
   registry:
   image:
-  tag: 0.0.1
+  tag:
 
-args:
+s3:
+  # endpoint:
+  download_concurrency: 10
+  download_part_size: 5
+
+caches:
+  get_blob_timeout: 5000
+  max_cache_size: 512
+  read_only: false
+  port: 8080
+
+metrics:
+  enable: true
+  metrics_port: 9095
 
 # hostname: ""
 
@@ -11,6 +24,9 @@ ports:
   - name: http
     port: 8080
     exposeInIngress: true
+  - name: http-metrics
+    port: 9095
+    exposeInIngress: false
 
 podPriority: ""
 

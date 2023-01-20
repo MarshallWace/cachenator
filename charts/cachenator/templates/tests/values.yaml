@@ -2,20 +2,24 @@ image:
   registry: docker-ghcr-remote.abc.local
   image: marshallwace/cachenator
   tag: 0.19.1
-args:
-  - -s3-endpoint=end_point
-  - -max-cache-size=0
-  - -timeout=60000
-  - -read-only
-ports:
-- name: http
+
+
+s3:
+  endpoint: t-endpoint
+  download_concurrency: 10
+  download_part_size: 5
+
+caches:
+  get_blob_timeout: 5000
+  max_cache_size: 512
+  read_only: false
   port: 8080
-  exposeInIngress: true
-  protocol: TCP
-- name: http-metrics
-  port: 9095
-  exposeInIngress: false
-enableAuthProxy: false
+
+metrics:
+  enable: true
+  metrics_port: 9095
+
+
 hostname: hostname.test.abcd.local
 generateTLSCertificate: true
 envVars:
