@@ -1,8 +1,9 @@
 image:
-  registry:
-  image:
-  tag:
+  registry: https://marshallwace.github.io/
+  image: cachenator
+  tag: 0.1.0
 
+# Configures S3 proxy related settings
 s3:
   # endpoint:
   download_concurrency: 10
