@@ -1,7 +1,7 @@
 image:
-  registry: https://marshallwace.github.io/
-  image: cachenator
-  tag: 0.1.0
+  registry: ghcr.io
+  image: marshallwace/cachenator
+  tag: 0.19.1
 
 # Configures S3 proxy related settings
 s3:
@@ -140,8 +140,8 @@ lifecycle: {}
   #         # some script
 
 
-#For additional side-containers:
-#sidecars:
+# For additional side-containers:
+# sidecars:
   # - name: sidecar_name
   #   image: docker-registry/image:tag
   #   resources:
@@ -185,37 +185,10 @@ resources: {}
   #   cpu: 200m
   #   memory: 1024Mi
 
-verticalPodAutoscaler:
-  updateMode: "Off"
-  # Set custom updateMode per container (optional)
-  # containerPolicies:
-  #   - containerName: my-sidecar
-  #     mode: "Off"
-  #   - containerName: other-sidecar
-  #     mode: "Initial"
-
-# https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler
-# updateMode can be:
-#   "Off"     - Only recommends resource requests and limits
-#   "Initial" - Applies recommendations only at pod creation
-#   "Auto"    - Automatically applies recommendations throughout the pod lifetime
-verticalPodAutoscaler:
-  updateMode: "Off"
-  # Set custom updateMode per container (optional)
-  # containerPolicies:
-  #   - containerName: my-sidecar
-  #     mode: "Off"
-  #   - containerName: other-sidecar
-  #     mode: "Initial"
-
-
-
 ##################
 #### Defaults ####
 ##################
 
-# Applies to ingresses only
-generateTLSCertificate: true
 # default for now, shouldn't have to change unless we deploy more issuers
 certIssuerName: vault-issuer
 
@@ -236,6 +209,6 @@ podSecurityContext: {}
 #     hostnames:
 #       - "foo.local"
 
-#imagePullPolicy: IfNotPresent
+# imagePullPolicy: IfNotPresent
 
 mutating_webhook_configuration: {}

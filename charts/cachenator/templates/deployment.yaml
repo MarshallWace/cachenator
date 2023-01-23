@@ -154,7 +154,7 @@ spec:
             - "-read-only"
             {{- end }}
             {{- if .Values.metrics.enabled }}
-            - "metrics-port={{ .Values.metrics.metrics_port }}"
+            - "-metrics-port={{ .Values.metrics.metrics_port }}"
             {{ else }}
             - "-disable-http-metrics"
             {{- end }}

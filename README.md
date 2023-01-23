@@ -230,3 +230,6 @@ helm repo update
 helm search repo cachenator
 helm pull gh_mwam/cachenator --version 0.1.0
 ```
+If you are using custom S3 endpoint, in env vars, you will need to specific `AWS_REGION` and `AWS_CA_BUNDLE`.
+You can pass in credentials using either (`AWS_SHARED_CREDENTIALS_FILE` and `AWS_PROFILE`)
+or (`AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`)

@@ -1,5 +1,5 @@
 image:
-  registry: docker-ghcr-remote.abc.local
+  registry: ghcr.io
   image: marshallwace/cachenator
   tag: 0.19.1
 
@@ -45,4 +45,6 @@ volumes:
       items:
         - key: root-ca
           path: ca.crt
-configs: {}
+configs:
+  root-ca: |
+    some cert here
