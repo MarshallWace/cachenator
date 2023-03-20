@@ -11,6 +11,7 @@ load helpers.sh
 #   "iss": "auth-provider",
 #   "action": "READ"
 # }
+# Not actually sensitive keys, only used for local testing for JWT tests in here
 # RSA keys used: tests/privkey.pem and tests/pubkey.crt
 
 @test "missing auth header" {
